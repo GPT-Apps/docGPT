@@ -64,7 +64,18 @@ public class MethodPrompt {
       String fullName = entry.getValue();
       ClassPrompt paraClassPrompt = cache.get(fullName);
       if (paraClassPrompt != null) {
-        fieldAnnotations.put(simpleName, paraClassPrompt.fieldAnnotations);
+        fieldAnnotations.put(simpleName, paraClassPrompt.fieldDeclarations);
+        if (!paraClassPrompt.fields.isEmpty()) {
+          for (Map.Entry<String /* simpleName */, String /* fullName */> fieldClassEntry : paraClassPrompt.fields
+              .entrySet()) {
+            String fieldSimpleName = fieldClassEntry.getKey();
+            String fieldFullName = fieldClassEntry.getValue();
+            ClassPrompt fieldClassPrompt = cache.get(fieldFullName);
+            if (fieldClassPrompt != null) {
+              fieldAnnotations.put(fieldSimpleName, fieldClassPrompt.fieldDeclarations);
+            }
+          }
+        }
       }
     }
     if (fieldAnnotations.size() > 0) {

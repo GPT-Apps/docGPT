@@ -21,9 +21,10 @@ public class ClassPrompt {
 
   String simpleName;
   List<String> classAnnotations = new ArrayList<>();
-  List<String> fieldAnnotations = new ArrayList<>();
+  List<String> fieldDeclarations = new ArrayList<>();
   Map<String /* declaration */, MethodPrompt> methodCache = new HashMap<>();
   Map<String /* methodName */, List<String /* declaration */>> methodNameCache = new HashMap<>();
+  public Map<String /* simpleName */, String /* fullName */> fields = new HashMap<>();
 
   public MethodPrompt getMethodPrompt(String methodName) {
     List<String /* declaration */> declarations = methodNameCache.get(methodName);

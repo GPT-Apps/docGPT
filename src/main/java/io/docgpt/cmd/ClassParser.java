@@ -6,11 +6,14 @@ package io.docgpt.cmd;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.Type;
 import io.docgpt.prompt.ClassPrompt;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
 import java.util.Optional;
+
+import static io.docgpt.cmd.MethodParser.parseTypeName;
 
 /**
  * @author masaimu
@@ -45,8 +48,9 @@ public class ClassParser {
         if (fieldDeclaration.isAnnotationDeclaration()) {
           continue;
         }
-
-        classPrompt.getFieldAnnotations().add(fieldDeclaration.toString());
+        classPrompt.getFieldDeclarations().add(fieldDeclaration.toString());
+        Type type = fieldDeclaration.getElementType();
+        parseTypeName(type, 1, classPrompt.fields, type.asString());
       }
     }
   }

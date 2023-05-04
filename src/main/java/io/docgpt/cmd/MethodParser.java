@@ -105,7 +105,6 @@ public class MethodParser {
       fullyQualifiedName = type.resolve().asReferenceType().getQualifiedName();
     } catch (Exception e) {
       System.out.println("fail to get fullyQualifiedName of " + name);
-      e.printStackTrace();
     }
     return fullyQualifiedName;
   }
