@@ -29,10 +29,43 @@ public class MethodPrompt {
 
   public Map<String /* simpleName */, String /* fullName */> parameters = new HashMap<>();
 
-  public String getPromptStr(Map<String, ClassPrompt> cache) {
+  public Map<String /* simpleName */, String /* fullName */> responses = new HashMap<>();
+
+  public String getRequestFormat() {
+    StringBuilder prompt = new StringBuilder();
+    if (parameters.size() == 0) {
+      prompt.append("Keep only one heading in the Request section with empty content. ");
+    } else {
+      prompt.append(
+          "The Request section include a markdown-formatted table that lists the name, type, description, and example of each parameter field.");
+    }
+    return prompt.toString();
+  }
+
+  public String getResponseFormat() {
+    StringBuilder prompt = new StringBuilder();
+    if (responses.size() == 0) {
+      prompt.append("Keep only one heading in the Response section with empty content. ");
+    } else {
+      prompt.append(
+          "The Response section include a markdown-formatted table that lists the name, type, description, and example of each response field.");
+    }
+    return prompt.toString();
+  }
+
+  public String docFormat() {
     StringBuilder prompt = new StringBuilder();
     prompt.append(
-        "Based on the rest interface code I gave you, write an interface document with an example of calling the interface with the curl command. ");
+        "Based on the rest interface code I gave you, write an markdown interface document with an example of calling the interface with the curl command. ");
+    prompt.append(
+        "The document consists of four parts. The Description section explains the function of the interface. The Request section shows the request body of the interface. The Response section displays the response body of the interface. The Example section demonstrates an interface call with curl.");
+    return prompt.toString();
+  }
+
+  public String getPromptStr(Map<String, ClassPrompt> cache) {
+    StringBuilder prompt = new StringBuilder();
+    prompt.append(docFormat());
+
     prompt.append("The method declaration is `").append(declaration).append("`. ");
     if (!CollectionUtils.isEmpty(annotations)) {
       prompt.append("The method has the following annotations: ");
@@ -44,6 +77,7 @@ public class MethodPrompt {
     }
     prompt.append("The code is as follows: ").append(code).append("\n");
 
+    prompt.append(getRequestFormat());
     if (parameters.size() > 0) {
       Map<String /* simpleTypeName */, List<String>> fieldAnnotations = new HashMap<>();
       for (Map.Entry<String /* simpleName */, String /* fullName */> entry : parameters
@@ -56,8 +90,7 @@ public class MethodPrompt {
         }
       }
       if (fieldAnnotations.size() > 0) {
-        prompt.append(
-            "The method parameter contains the following fields, which you can display in a list: ");
+        prompt.append("The Request parameters are as follows: ");
         for (Map.Entry<String /* simpleTypeName */, List<String>> entry : fieldAnnotations
             .entrySet()) {
           String simpleTypeName = entry.getKey();
@@ -69,6 +102,7 @@ public class MethodPrompt {
         }
       }
     }
+    // prompt.append(FormatPrompt.getRequestPrompt());
 
     return prompt.toString();
   }

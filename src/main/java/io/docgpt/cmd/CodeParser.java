@@ -15,6 +15,8 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
@@ -26,6 +28,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -205,25 +208,39 @@ public class CodeParser {
         methodPrompt.declaration = md.getDeclarationAsString();
         methodPrompt.simpleName = md.getNameAsString();
 
-        // 获取方法名
-        String methodName = md.getNameAsString();
-
-        // System.out.println("Method name: " + methodName);
-
-        // 获取方法参数
+        // parse method parameters
         List<Parameter> parameters = md.getParameters();
         for (Parameter parameter : parameters) {
           String simpleName = parameter.getTypeAsString();
-          String fullyQualifiedName =
-              parameter.getType().resolve().asReferenceType().getQualifiedName();
-          methodPrompt.parameters.put(simpleName, fullyQualifiedName);
+          Type type = parameter.getType();
+          try {
+            String fullyQualifiedName = type.resolve().asReferenceType().getQualifiedName();
+            methodPrompt.parameters.put(simpleName, fullyQualifiedName);
+          } catch (Exception e) {
+            System.out.println("fail to get fullyQualifiedName of " + simpleName);
+            continue;
+          }
+          if (type instanceof ClassOrInterfaceType) {
+            ClassOrInterfaceType classOrInterfaceType = (ClassOrInterfaceType) type;
+            if (classOrInterfaceType.getTypeArguments().isPresent()) {
+              // Get the type argument
+              Type typeArgument = classOrInterfaceType.getTypeArguments().get().get(0);
+
+              // If the type argument is a type parameter, get the name of the type parameter
+              if (typeArgument instanceof ClassOrInterfaceType) {
+                String simpleName1 = ((ClassOrInterfaceType) typeArgument).getName().asString();
+                String fullyQualifiedName1 =
+                    typeArgument.resolve().asReferenceType().getQualifiedName();
+                methodPrompt.parameters.put(simpleName1, fullyQualifiedName1);
+              }
+            }
+          }
         }
         // 获取方法注释
         Optional<Comment> optional = md.getComment();
         optional.ifPresent(comment -> methodPrompt.comment = comment.getContent());
 
         List<AnnotationExpr> annotations = md.getAnnotations();
-        // System.out.println("Annotations on method " + md.getName() + ":");
         for (AnnotationExpr annotation : annotations) {
           methodPrompt.annotations.add(annotation.toString());
         }
