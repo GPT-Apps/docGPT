@@ -1,5 +1,6 @@
 # DocGPT
-
-![docgpt_master](./images/docgpt_master.png)
+<a >
+    <img style="vertical-align: top;" src="./images/docgpt_logo.png?raw=true" alt="logo" height="50px">
+</a>
 
 Use ChatGPT to generate documentation for code, including architecture and API documentation.
