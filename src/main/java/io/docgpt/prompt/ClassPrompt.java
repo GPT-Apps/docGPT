@@ -34,4 +34,11 @@ public class ClassPrompt {
       return methodCache.get(declaration);
     }
   }
+
+  public void cacheMethod(MethodPrompt methodPrompt) {
+    this.methodCache.put(methodPrompt.declaration, methodPrompt);
+    List<String /* declaration */> declarations =
+        this.methodNameCache.computeIfAbsent(methodPrompt.simpleName, k -> new ArrayList<>());
+    declarations.add(methodPrompt.declaration);
+  }
 }

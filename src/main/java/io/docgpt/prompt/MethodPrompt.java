@@ -31,24 +31,53 @@ public class MethodPrompt {
 
   public Map<String /* simpleName */, String /* fullName */> responses = new HashMap<>();
 
-  public String getRequestFormat() {
+  public String getRequestFormat(Map<String, ClassPrompt> cache) {
     StringBuilder prompt = new StringBuilder();
     if (parameters.size() == 0) {
       prompt.append("Keep only one heading in the Request section with empty content. ");
     } else {
       prompt.append(
           "The Request section include a markdown-formatted table that lists the name, type, description, and example of each parameter field.");
+      prompt.append(getField(parameters, cache, "Request"));
     }
     return prompt.toString();
   }
 
-  public String getResponseFormat() {
+  public String getResponseFormat(Map<String, ClassPrompt> cache) {
     StringBuilder prompt = new StringBuilder();
     if (responses.size() == 0) {
       prompt.append("Keep only one heading in the Response section with empty content. ");
     } else {
       prompt.append(
           "The Response section include a markdown-formatted table that lists the name, type, description, and example of each response field.");
+      prompt.append(getField(responses, cache, "Response"));
+    }
+    return prompt.toString();
+  }
+
+  public String getField(Map<String /* simpleName */, String /* fullName */> nameMap,
+      Map<String, ClassPrompt> cache, String sourceName) {
+    StringBuilder prompt = new StringBuilder();
+    Map<String /* simpleTypeName */, List<String>> fieldAnnotations = new HashMap<>();
+    for (Map.Entry<String /* simpleName */, String /* fullName */> entry : nameMap.entrySet()) {
+      String simpleName = entry.getKey();
+      String fullName = entry.getValue();
+      ClassPrompt paraClassPrompt = cache.get(fullName);
+      if (paraClassPrompt != null) {
+        fieldAnnotations.put(simpleName, paraClassPrompt.fieldAnnotations);
+      }
+    }
+    if (fieldAnnotations.size() > 0) {
+      prompt.append("The ").append(sourceName).append(" parameters are as follows: ");
+      for (Map.Entry<String /* simpleTypeName */, List<String>> entry : fieldAnnotations
+          .entrySet()) {
+        String simpleTypeName = entry.getKey();
+        prompt.append("public class ").append(simpleTypeName).append(" {");
+        for (String fieldDeclaration : entry.getValue()) {
+          prompt.append(fieldDeclaration).append("\n");
+        }
+        prompt.append("}\n");
+      }
     }
     return prompt.toString();
   }
@@ -77,32 +106,8 @@ public class MethodPrompt {
     }
     prompt.append("The code is as follows: ").append(code).append("\n");
 
-    prompt.append(getRequestFormat());
-    if (parameters.size() > 0) {
-      Map<String /* simpleTypeName */, List<String>> fieldAnnotations = new HashMap<>();
-      for (Map.Entry<String /* simpleName */, String /* fullName */> entry : parameters
-          .entrySet()) {
-        String simpleName = entry.getKey();
-        String fullName = entry.getValue();
-        ClassPrompt paraClassPrompt = cache.get(fullName);
-        if (paraClassPrompt != null) {
-          fieldAnnotations.put(simpleName, paraClassPrompt.fieldAnnotations);
-        }
-      }
-      if (fieldAnnotations.size() > 0) {
-        prompt.append("The Request parameters are as follows: ");
-        for (Map.Entry<String /* simpleTypeName */, List<String>> entry : fieldAnnotations
-            .entrySet()) {
-          String simpleTypeName = entry.getKey();
-          prompt.append("public class ").append(simpleTypeName).append(" {");
-          for (String fieldDeclaration : entry.getValue()) {
-            prompt.append(fieldDeclaration).append("\n");
-          }
-          prompt.append("}\n");
-        }
-      }
-    }
-    // prompt.append(FormatPrompt.getRequestPrompt());
+    prompt.append(getRequestFormat(cache));
+    prompt.append(getResponseFormat(cache));
 
     return prompt.toString();
   }
