@@ -171,23 +171,10 @@ public class CodeParser {
     @Override
     public void visit(ClassOrInterfaceDeclaration cid, Void arg) {
       try {
-        classPrompt.setSimpleName(cid.getNameAsString());
-        classPrompt.setFullyQualifiedName(cid.getFullyQualifiedName().get());
-        List<String> classAnnotationExprs = classPrompt.getClassAnnotations();
-        List<AnnotationExpr> annotations = cid.getAnnotations();
-        for (AnnotationExpr annotation : annotations) {
-          classAnnotationExprs.add(annotation.toString());
-        }
-        if (!CollectionUtils.isEmpty(cid.getFields())) {
-          for (FieldDeclaration fieldDeclaration : cid.getFields()) {
-            if (fieldDeclaration.isAnnotationDeclaration()) {
-              continue;
-            }
-
-            classPrompt.getFieldAnnotations().add(fieldDeclaration.toString());
-          }
-        }
-
+        ClassParser.parseSimpleName(cid, classPrompt);
+        ClassParser.parseFullyQualifiedName(cid, classPrompt);
+        ClassParser.parseAnnotation(cid, classPrompt);
+        ClassParser.parseField(cid, classPrompt);
       } finally {
         super.visit(cid, arg);
       }
@@ -196,61 +183,19 @@ public class CodeParser {
     @Override
     public void visit(MethodDeclaration md, Void arg) {
       try {
-
-        if (CollectionUtils.isEmpty(md.getAnnotations())) {
-          return;
-        }
         if (!isApiAnnotations(md.getAnnotations())) {
           return;
         }
         MethodPrompt methodPrompt = new MethodPrompt();
         methodPrompt.setClassPrompt(classPrompt);
-        methodPrompt.declaration = md.getDeclarationAsString();
-        methodPrompt.simpleName = md.getNameAsString();
-
-        // parse method parameters
-        List<Parameter> parameters = md.getParameters();
-        for (Parameter parameter : parameters) {
-          String simpleName = parameter.getTypeAsString();
-          Type type = parameter.getType();
-          try {
-            String fullyQualifiedName = type.resolve().asReferenceType().getQualifiedName();
-            methodPrompt.parameters.put(simpleName, fullyQualifiedName);
-          } catch (Exception e) {
-            System.out.println("fail to get fullyQualifiedName of " + simpleName);
-            continue;
-          }
-          if (type instanceof ClassOrInterfaceType) {
-            ClassOrInterfaceType classOrInterfaceType = (ClassOrInterfaceType) type;
-            if (classOrInterfaceType.getTypeArguments().isPresent()) {
-              // Get the type argument
-              Type typeArgument = classOrInterfaceType.getTypeArguments().get().get(0);
-
-              // If the type argument is a type parameter, get the name of the type parameter
-              if (typeArgument instanceof ClassOrInterfaceType) {
-                String simpleName1 = ((ClassOrInterfaceType) typeArgument).getName().asString();
-                String fullyQualifiedName1 =
-                    typeArgument.resolve().asReferenceType().getQualifiedName();
-                methodPrompt.parameters.put(simpleName1, fullyQualifiedName1);
-              }
-            }
-          }
-        }
-        // 获取方法注释
-        Optional<Comment> optional = md.getComment();
-        optional.ifPresent(comment -> methodPrompt.comment = comment.getContent());
-
-        List<AnnotationExpr> annotations = md.getAnnotations();
-        for (AnnotationExpr annotation : annotations) {
-          methodPrompt.annotations.add(annotation.toString());
-        }
-
-        String methodBody = md.getBody().get().toString();
-        methodPrompt.code = methodBody;
-        classPrompt.getMethodCache().put(methodPrompt.declaration, methodPrompt);
-        List<String /* declaration */> declarations = classPrompt.getMethodNameCache()
-            .computeIfAbsent(methodPrompt.simpleName, k -> new ArrayList<>());
-        declarations.add(methodPrompt.declaration);
+        MethodParser.parseDeclaration(md, methodPrompt);
+        MethodParser.parseSimpleName(md, methodPrompt);
+        MethodParser.parseParameter(md, methodPrompt);
+        MethodParser.parseComment(md, methodPrompt);
+        MethodParser.parseAnnotation(md, methodPrompt);
+        MethodParser.parseCode(md, methodPrompt);
+        MethodParser.parseResponse(md, methodPrompt);
+        classPrompt.cacheMethod(methodPrompt);
       } finally {
         super.visit(md, arg);
       }

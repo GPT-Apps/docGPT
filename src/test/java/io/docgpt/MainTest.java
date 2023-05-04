@@ -17,7 +17,7 @@ class MainTest {
     String usrHome = System.getProperty("user.home");
     String[] args = new String[] {"-d",
         usrHome + "/IdeaProjects/holoinsight-enterprise/opensource/server/home/", "-f",
-        "CustomPluginFacadeImpl", "-m", "pageQuery"};
+        "AlarmHistoryDetailFacadeImpl", "-m", "queryCountTrend"};
 
     Main.main(args);
   }
@@ -27,7 +27,7 @@ class MainTest {
     String usrHome = System.getProperty("user.home");
     String[] args = new String[] {"-d",
         usrHome + "/IdeaProjects/holoinsight-enterprise/opensource/server/home/", "-f",
-        "CustomPluginFacadeImpl", "-m", "pageQuery", "-g"};
+        "AlarmHistoryDetailFacadeImpl", "-m", "queryCountTrend", "-g"};
 
     Main.main(args);
   }
