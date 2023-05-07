@@ -91,4 +91,18 @@ public class OptionService {
       throw new RuntimeException(e);
     }
   }
+
+  public CmdHandler parseAndExecute(String[] args) {
+    try {
+      String cmd = args[0];
+      CmdHandler cmdHandler = CommandFactory.getCmdHandler(cmd);
+      if (cmdHandler != null) {
+        cmdHandler.parseOption(args);
+        CommandFactory.execute(cmdHandler);
+      }
+      return cmdHandler;
+    } catch (ParseException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

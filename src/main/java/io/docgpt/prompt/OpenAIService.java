@@ -1,7 +1,7 @@
 /*
  * Copyright 2023 DocGPT Project Authors. Licensed under Apache-2.0.
  */
-package io.docgpt.cmd;
+package io.docgpt.prompt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.OpenAiApi;

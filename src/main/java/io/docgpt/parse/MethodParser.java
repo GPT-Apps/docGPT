@@ -1,7 +1,7 @@
 /*
  * Copyright 2023 DocGPT Project Authors. Licensed under Apache-2.0.
  */
-package io.docgpt.cmd;
+package io.docgpt.parse;
 
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -104,7 +104,7 @@ public class MethodParser {
     try {
       fullyQualifiedName = type.resolve().asReferenceType().getQualifiedName();
     } catch (Exception e) {
-      System.out.println("fail to get fullyQualifiedName of " + name);
+      // System.out.println("fail to get fullyQualifiedName of " + name);
     }
     return fullyQualifiedName;
   }
