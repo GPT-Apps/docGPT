@@ -1,7 +1,7 @@
 /*
  * Copyright 2023 DocGPT Project Authors. Licensed under Apache-2.0.
  */
-package io.docgpt.cmd;
+package io.docgpt.parse;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
@@ -13,7 +13,7 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.List;
 import java.util.Optional;
 
-import static io.docgpt.cmd.MethodParser.parseTypeName;
+import static io.docgpt.parse.MethodParser.parseTypeName;
 
 /**
  * @author masaimu
