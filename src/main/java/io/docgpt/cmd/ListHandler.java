@@ -62,6 +62,7 @@ public class ListHandler extends CmdHandler {
         List<String> fullNameList = codeContext.nameCache.get(clazz);
         String fullName = fullNameList.get(0);
         ClassPrompt classPrompt = codeContext.cache.get(fullName);
+        codeContext.activeClassPrompt = classPrompt;
         String table = tableService.getMethodTableStr(classPrompt);
         setInfoSignal(table);
       } else {
