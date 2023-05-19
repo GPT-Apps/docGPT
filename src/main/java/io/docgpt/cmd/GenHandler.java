@@ -12,7 +12,9 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
+import org.jline.builtins.Completers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,12 +25,21 @@ public class GenHandler extends CmdHandler {
 
   static Options options = new Options();
 
+  static MethodCompleter methodCompleter = new MethodCompleter();
+
   CommandLine commandLine;
+
+  public static final String GENERATE = "gen";
+
+  private static final List<Completers.OptDesc> optDescList = new ArrayList<>();
 
   OpenAIService openAIService = new OpenAIService();
 
   static {
-    options.addOption("m", "method", true, "simple java name");
+    Completers.OptDesc m =
+        new Completers.OptDesc("-m", "--method", "Simple java name", methodCompleter);
+    optDescList.add(m);
+    options.addOption(shortOpt(m.shortOption()), longOpt(m.longOption()), true, m.description());
   }
 
   @Override
@@ -71,5 +82,9 @@ public class GenHandler extends CmdHandler {
     } finally {
       setStopSignal(stopMsg);
     }
+  }
+
+  public static List<Completers.OptDesc> getOptDescList() {
+    return optDescList;
   }
 }

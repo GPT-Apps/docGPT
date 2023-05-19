@@ -9,20 +9,16 @@ import io.docgpt.cmd.ListHandler;
 import io.docgpt.cmd.LoadHandler;
 import io.docgpt.cmd.TerminalService;
 
-import java.util.Arrays;
-
 /**
  * @author masaimu
  * @version 0.1
  */
 public class Main {
   public static void main(String[] args) {
-    System.out.println(Arrays.asList(args));
-
     try {
-      CommandFactory.registry("load", new LoadHandler());
-      CommandFactory.registry("ls", new ListHandler());
-      CommandFactory.registry("gen", new GenHandler());
+      CommandFactory.registry(LoadHandler.LOAD, new LoadHandler());
+      CommandFactory.registry(ListHandler.LIST, new ListHandler());
+      CommandFactory.registry(GenHandler.GENERATE, new GenHandler());
       TerminalService.start();
     } catch (Exception e) {
       throw new RuntimeException(e);
