@@ -5,8 +5,6 @@ package io.docgpt;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * @author masaimu
  * @version 2023-04-23 20:50:00

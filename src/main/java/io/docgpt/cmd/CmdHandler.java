@@ -11,6 +11,7 @@ import io.docgpt.cmd.signal.WarnSignal;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -45,6 +46,17 @@ public abstract class CmdHandler implements Runnable {
     return queue.offer(new ProgressSignal(maxProgress, currentProgress));
   }
 
+  protected static String longOpt(String longOption) {
+    if (StringUtils.isNotEmpty(longOption) && longOption.startsWith("--")) {
+      return longOption.substring(2);
+    }
+    return longOption;
+  }
 
-
+  protected static String shortOpt(String shortOption) {
+    if (StringUtils.isNotEmpty(shortOption) && shortOption.startsWith("-")) {
+      return shortOption.substring(1);
+    }
+    return shortOption;
+  }
 }

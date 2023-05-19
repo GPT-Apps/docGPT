@@ -27,12 +27,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jline.builtins.Completers.FileNameCompleter;
+import org.jline.builtins.Completers.OptDesc;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.docgpt.cmd.TerminalService.terminal;
 
 
 /**
@@ -42,12 +42,20 @@ import static io.docgpt.cmd.TerminalService.terminal;
 public class LoadHandler extends CmdHandler {
   static Options options = new Options();
 
+  private static final String USER_HOME = System.getProperty("user.home");
+
+  public static final String LOAD = "load";
+
   CommandLine commandLine;
 
   JavaParser javaParser;
 
+  private static final List<OptDesc> optDescList = new ArrayList<>();
+
   static {
-    options.addOption("d", "directory", true, "java file directory.");
+    OptDesc d = new OptDesc("-d", "--directory", "Java file directory", new FileNameCompleter());
+    optDescList.add(d);
+    options.addOption(shortOpt(d.shortOption()), longOpt(d.longOption()), true, d.description());
   }
 
   public void parseOption(String[] args) throws ParseException {
@@ -67,6 +75,9 @@ public class LoadHandler extends CmdHandler {
       if (commandLine.hasOption("d")) {
         directory = commandLine.getOptionValue("d");
       }
+      if (directory.startsWith("~" + File.separator)) {
+        directory = USER_HOME + directory.substring(1);
+      }
       File dir = new File(directory);
       if (!dir.isDirectory()) {
         setWarnSignal(directory + " is not directory");
@@ -83,6 +94,7 @@ public class LoadHandler extends CmdHandler {
       preLoad(codeContext);
       stopMsg = "The Java code parsing has been completed.";
       CommandFactory.setCodeContext(codeContext);
+      ListHandler.completer.setClazzVars(new ArrayList<>(codeContext.nameCache.keySet()));
     } finally {
       setStopSignal(stopMsg);
     }
@@ -160,6 +172,9 @@ public class LoadHandler extends CmdHandler {
             methodPrompt.addAnnotations(classPrompt.getClassAnnotations());
           }
         }
+        if (StringUtils.isEmpty(classPrompt.getSimpleName())) {
+          continue;
+        }
         context.cache.put(classPrompt.getFullyQualifiedName(), classPrompt);
         List<String> fullNames =
             context.nameCache.computeIfAbsent(classPrompt.getSimpleName(), k -> new ArrayList<>());
@@ -171,6 +186,10 @@ public class LoadHandler extends CmdHandler {
         e.printStackTrace();
       }
     }
+  }
+
+  public static List<OptDesc> getOptDescList() {
+    return optDescList;
   }
 
   private static class PackageVisitor extends VoidVisitorAdapter<Void> {

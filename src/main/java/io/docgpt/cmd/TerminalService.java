@@ -33,8 +33,6 @@ public class TerminalService {
 
   private static OptionService optionService = new OptionService();
 
-  private static final String USER_HOME = System.getProperty("user.home");
-
   static {
     try {
       terminal = TerminalBuilder.builder().system(true).build();
@@ -42,7 +40,8 @@ public class TerminalService {
       System.err.println("Fail to start terminal for " + e.getMessage());
       throw new RuntimeException(e);
     }
-    lineReader = LineReaderBuilder.builder().terminal(terminal).build();
+    lineReader =
+        LineReaderBuilder.builder().completer(new OptionsCompleters()).terminal(terminal).build();
   }
 
   public static void start() {
