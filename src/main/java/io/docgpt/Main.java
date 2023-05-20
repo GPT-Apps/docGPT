@@ -5,6 +5,7 @@ package io.docgpt;
 
 import io.docgpt.cmd.CommandFactory;
 import io.docgpt.cmd.GenHandler;
+import io.docgpt.cmd.HelpHandler;
 import io.docgpt.cmd.ListHandler;
 import io.docgpt.cmd.LoadHandler;
 import io.docgpt.cmd.TerminalService;
@@ -16,6 +17,7 @@ import io.docgpt.cmd.TerminalService;
 public class Main {
   public static void main(String[] args) {
     try {
+      CommandFactory.registry(HelpHandler.HELP, new HelpHandler());
       CommandFactory.registry(LoadHandler.LOAD, new LoadHandler());
       CommandFactory.registry(ListHandler.LIST, new ListHandler());
       CommandFactory.registry(GenHandler.GENERATE, new GenHandler());

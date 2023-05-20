@@ -101,8 +101,9 @@ public class OptionService {
         CommandFactory.execute(cmdHandler);
       }
       return cmdHandler;
-    } catch (ParseException e) {
-      throw new RuntimeException(e);
+    } catch (CancelTask e) {
+      // ignore
+      return null;
     }
   }
 }
