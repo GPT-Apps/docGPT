@@ -11,7 +11,7 @@ public class StopSignal extends CmdSignal {
   public String reason;
 
   public StopSignal() {
-    this.reason = " ";
+    this(" ");
   }
 
   public StopSignal(String reason) {
