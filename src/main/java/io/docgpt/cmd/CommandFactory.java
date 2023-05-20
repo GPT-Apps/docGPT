@@ -6,7 +6,9 @@ package io.docgpt.cmd;
 import io.docgpt.parse.CodeContext;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -27,6 +29,10 @@ public class CommandFactory {
 
   public static CmdHandler getCmdHandler(String cmd) {
     return handlerMap.get(cmd);
+  }
+
+  public static List<CmdHandler> getCmdHandlers() {
+    return new ArrayList<>(handlerMap.values());
   }
 
   public static void execute(CmdHandler handler) {

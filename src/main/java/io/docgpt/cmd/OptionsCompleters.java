@@ -32,37 +32,36 @@ public class OptionsCompleters implements Completer {
   }
 
   private void init() {
-    OptionCompleter loadOption =
-        new OptionCompleter(Arrays.asList(new StringsCompleter("-d")), this::commandOptions, 1);
+    OptionCompleter loadOption = new OptionCompleter(
+        Arrays.asList(new ArgumentStringsCompleter("-d=")), this::commandOptions, 1);
     ArgumentCompleter load = new ArgumentCompleter(new StringsCompleter(LoadHandler.LOAD),
         loadOption, NullCompleter.INSTANCE);
 
-    OptionCompleter lsOption = new OptionCompleter(Arrays.asList(new StringsCompleter("-a", "-c")),
-        this::commandOptions, 1);
+    OptionCompleter lsOption = new OptionCompleter(
+        Arrays.asList(new ArgumentStringsCompleter("-c=", "-a")), this::commandOptions, 1);
     ArgumentCompleter ls = new ArgumentCompleter(new StringsCompleter(ListHandler.LIST), lsOption,
         NullCompleter.INSTANCE);
 
-    OptionCompleter genOption =
-        new OptionCompleter(Arrays.asList(new StringsCompleter("-m")), this::commandOptions, 1);
+    OptionCompleter genOption = new OptionCompleter(
+        Arrays.asList(new ArgumentStringsCompleter("-m=")), this::commandOptions, 1);
     ArgumentCompleter gen = new ArgumentCompleter(new StringsCompleter(GenHandler.GENERATE),
         genOption, NullCompleter.INSTANCE);
 
-    aggregateCompleter = new AggregateCompleter(load, ls, gen);
+    ArgumentCompleter help =
+        new ArgumentCompleter(new StringsCompleter(HelpHandler.HELP), NullCompleter.INSTANCE);
+
+    aggregateCompleter = new AggregateCompleter(load, ls, gen, help);
   }
 
   public List<Completers.OptDesc> commandOptions(String command) {
     if (StringUtils.isEmpty(command)) {
       return Collections.emptyList();
     }
-    switch (command) {
-      case LoadHandler.LOAD:
-        return LoadHandler.getOptDescList();
-      case ListHandler.LIST:
-        return ListHandler.getOptDescList();
-      case GenHandler.GENERATE:
-        return GenHandler.getOptDescList();
-      default:
-        return Collections.emptyList();
+    CmdHandler cmdHandler = CommandFactory.getCmdHandler(command);
+    if (cmdHandler != null) {
+      return cmdHandler.getOptDescList();
+    } else {
+      return Collections.emptyList();
     }
   }
 

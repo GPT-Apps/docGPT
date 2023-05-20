@@ -14,7 +14,9 @@ import org.jline.builtins.Completers.OptDesc;
 import org.jline.reader.impl.completer.NullCompleter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.docgpt.cmd.TerminalService.terminal;
 
@@ -35,8 +37,10 @@ public class ListHandler extends CmdHandler {
 
   private static final List<OptDesc> optDescList = new ArrayList<>();
 
+  private static final Map<String, String /* arg example */> expMap = new HashMap<>();
+
   static {
-    OptDesc c = new OptDesc("-c", "--class", "Java class name", completer);
+    OptDesc c = new OptDesc("-c", "--class", "Specify class to list methods", completer);
     optDescList.add(c);
     options.addOption(shortOpt(c.shortOption()), longOpt(c.longOption()), true, c.description());
 
@@ -46,8 +50,13 @@ public class ListHandler extends CmdHandler {
   }
 
   @Override
-  public void parseOption(String[] args) throws ParseException {
-    this.commandLine = parser.parse(options, args);
+  public void parseOption(String[] args) {
+    try {
+      this.commandLine = parser.parse(options, args);
+    } catch (ParseException e) {
+      setErrorSignal(e.getMessage());
+      setStopSignal();
+    }
   }
 
   @Override
@@ -56,11 +65,10 @@ public class ListHandler extends CmdHandler {
   }
 
   public void handler() {
-    String stopMsg = " ";
     try {
       String clazz = StringUtils.EMPTY;
 
-      if (commandLine.hasOption("c")) {
+      if (commandLine != null && commandLine.hasOption("c")) {
         clazz = commandLine.getOptionValue("c");
       }
       boolean all = commandLine.hasOption("a");
@@ -88,11 +96,22 @@ public class ListHandler extends CmdHandler {
         setInfoSignal(list);
       }
     } finally {
-      setStopSignal(stopMsg);
+      setStopSignal();
     }
   }
 
-  public static List<Completers.OptDesc> getOptDescList() {
+  @Override
+  public String getCmd() {
+    return LIST;
+  }
+
+  @Override
+  public Map<String, String> getExpMap() {
+    return expMap;
+  }
+
+  @Override
+  public List<Completers.OptDesc> getOptDescList() {
     return optDescList;
   }
 }

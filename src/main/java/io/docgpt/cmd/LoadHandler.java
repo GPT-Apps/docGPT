@@ -32,7 +32,9 @@ import org.jline.builtins.Completers.OptDesc;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -52,14 +54,23 @@ public class LoadHandler extends CmdHandler {
 
   private static final List<OptDesc> optDescList = new ArrayList<>();
 
+  private static final Map<String, String /* arg example */> expMap = new HashMap<>();
+
   static {
-    OptDesc d = new OptDesc("-d", "--directory", "Java file directory", new FileNameCompleter());
+    OptDesc d = new OptDesc("-d", "--directory", "Specify Java file directory path to load class",
+        new FileNameCompleter());
+    expMap.put(d.shortOption(), "<Java file directory>");
     optDescList.add(d);
     options.addOption(shortOpt(d.shortOption()), longOpt(d.longOption()), true, d.description());
   }
 
-  public void parseOption(String[] args) throws ParseException {
-    this.commandLine = parser.parse(options, args);
+  public void parseOption(String[] args) {
+    try {
+      this.commandLine = parser.parse(options, args);
+    } catch (ParseException e) {
+      setErrorSignal(e.getMessage());
+      setStopSignal();
+    }
   }
 
   @Override
@@ -72,7 +83,7 @@ public class LoadHandler extends CmdHandler {
     try {
       String directory = StringUtils.EMPTY;
 
-      if (commandLine.hasOption("d")) {
+      if (commandLine != null && commandLine.hasOption("d")) {
         directory = commandLine.getOptionValue("d");
       }
       if (directory.startsWith("~" + File.separator)) {
@@ -188,10 +199,6 @@ public class LoadHandler extends CmdHandler {
     }
   }
 
-  public static List<OptDesc> getOptDescList() {
-    return optDescList;
-  }
-
   private static class PackageVisitor extends VoidVisitorAdapter<Void> {
     String packageName;
 
@@ -251,5 +258,20 @@ public class LoadHandler extends CmdHandler {
       }
       return false;
     }
+  }
+
+  @Override
+  public String getCmd() {
+    return LOAD;
+  }
+
+  @Override
+  public Map<String, String> getExpMap() {
+    return expMap;
+  }
+
+  @Override
+  public List<OptDesc> getOptDescList() {
+    return optDescList;
   }
 }

@@ -4,6 +4,7 @@
 package io.docgpt.cmd;
 
 import io.docgpt.cmd.signal.CmdSignal;
+import io.docgpt.cmd.signal.ErrorSignal;
 import io.docgpt.cmd.signal.InfoSignal;
 import io.docgpt.cmd.signal.ProgressSignal;
 import io.docgpt.cmd.signal.StopSignal;
@@ -83,6 +84,10 @@ public class TerminalService {
           printProgress(((ProgressSignal) signal).currentProgress,
               ((ProgressSignal) signal).maxProgress);
           lastProgress = true;
+        } else if (signal instanceof ErrorSignal) {
+          printError(((ErrorSignal) signal).message, lastProgress);
+          lastProgress = false;
+          break;
         }
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -129,6 +134,18 @@ public class TerminalService {
   private static void printWarn(String message, boolean newline) {
     if (StringUtils.isNotEmpty(message)) {
       Ansi ansi = Ansi.ansi().bg(Ansi.Color.BLACK).fg(Ansi.Color.YELLOW);
+      if (newline) {
+        ansi.newline();
+      }
+      ansi.a(message).newline().reset();
+      terminal.writer().print(ansi);
+      terminal.flush();
+    }
+  }
+
+  private static void printError(String message, boolean newline) {
+    if (StringUtils.isNotEmpty(message)) {
+      Ansi ansi = Ansi.ansi().bg(Ansi.Color.BLACK).fg(Ansi.Color.RED);
       if (newline) {
         ansi.newline();
       }

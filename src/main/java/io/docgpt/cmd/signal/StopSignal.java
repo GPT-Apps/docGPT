@@ -10,9 +10,11 @@ package io.docgpt.cmd.signal;
 public class StopSignal extends CmdSignal {
   public String reason;
 
+  public StopSignal() {
+    this.reason = " ";
+  }
+
   public StopSignal(String reason) {
     this.reason = reason;
   }
-
-  public StopSignal() {}
 }

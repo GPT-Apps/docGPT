@@ -15,7 +15,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jline.builtins.Completers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author masaimu
@@ -33,18 +35,26 @@ public class GenHandler extends CmdHandler {
 
   private static final List<Completers.OptDesc> optDescList = new ArrayList<>();
 
+  private static final Map<String, String /* arg example */> expMap = new HashMap<>();
+
   OpenAIService openAIService = new OpenAIService();
 
   static {
-    Completers.OptDesc m =
-        new Completers.OptDesc("-m", "--method", "Simple java name", methodCompleter);
+    Completers.OptDesc m = new Completers.OptDesc("-m", "--method",
+        "Specify method to generate document", methodCompleter);
+    expMap.put(m.shortOption(), "<Simple java name>");
     optDescList.add(m);
     options.addOption(shortOpt(m.shortOption()), longOpt(m.longOption()), true, m.description());
   }
 
   @Override
-  public void parseOption(String[] args) throws ParseException {
-    this.commandLine = parser.parse(options, args);
+  public void parseOption(String[] args) {
+    try {
+      this.commandLine = parser.parse(options, args);
+    } catch (ParseException e) {
+      setErrorSignal(e.getMessage());
+      setStopSignal();
+    }
   }
 
   @Override
@@ -53,11 +63,10 @@ public class GenHandler extends CmdHandler {
   }
 
   public void handler() {
-    String stopMsg = " ";
     try {
       String method = StringUtils.EMPTY;
 
-      if (commandLine.hasOption("m")) {
+      if (commandLine != null && commandLine.hasOption("m")) {
         method = commandLine.getOptionValue("m");
       }
 
@@ -80,11 +89,22 @@ public class GenHandler extends CmdHandler {
         }
       }
     } finally {
-      setStopSignal(stopMsg);
+      setStopSignal();
     }
   }
 
-  public static List<Completers.OptDesc> getOptDescList() {
+  @Override
+  public String getCmd() {
+    return GENERATE;
+  }
+
+  @Override
+  public Map<String, String> getExpMap() {
+    return expMap;
+  }
+
+  @Override
+  public List<Completers.OptDesc> getOptDescList() {
     return optDescList;
   }
 }
