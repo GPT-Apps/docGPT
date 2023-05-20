@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author masaimu
@@ -82,12 +84,35 @@ public class GenHandler extends CmdHandler {
       ClassPrompt activeClassPrompt = codeContext.activeClassPrompt;
       if (StringUtils.isNotBlank(method)) {
         MethodPrompt methodPrompt = activeClassPrompt.getMethodPrompt(method);
-        List<ChatCompletionChoice> choices =
-            openAIService.invoke(methodPrompt.getPromptStr(codeContext.cache));
-        for (ChatCompletionChoice choice : choices) {
-          setInfoSignal(choice.getMessage().getContent());
+        if (methodPrompt == null) {
+          setWarnSignal("Can not find method " + method);
+        } else {
+          String prompt = methodPrompt.getPromptStr(codeContext.cache);
+          setInfoSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
+          AtomicBoolean wait = new AtomicBoolean(true);
+          CountDownLatch invoke = new CountDownLatch(1);
+          new Thread(() -> {
+            int i = 0;
+            while (wait.get()) {
+              try {
+                setWaitSignal("Please wait for OpenAI response", i++, 4);
+                Thread.sleep(500L);
+              } catch (Exception e) {
+                break;
+              }
+            }
+            invoke.countDown();
+          }).start();
+          List<ChatCompletionChoice> choices = openAIService.invoke(prompt);
+          wait.set(false);
+          invoke.await();
+          for (ChatCompletionChoice choice : choices) {
+            setInfoSignal(choice.getMessage().getContent());
+          }
         }
       }
+    } catch (InterruptedException e) {
+      setErrorSignal(e.getMessage());
     } finally {
       setStopSignal();
     }

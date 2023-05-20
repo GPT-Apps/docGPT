@@ -8,6 +8,7 @@ import io.docgpt.cmd.signal.ErrorSignal;
 import io.docgpt.cmd.signal.InfoSignal;
 import io.docgpt.cmd.signal.ProgressSignal;
 import io.docgpt.cmd.signal.StopSignal;
+import io.docgpt.cmd.signal.WaitSignal;
 import io.docgpt.cmd.signal.WarnSignal;
 import io.docgpt.parse.CodeContext;
 import org.apache.commons.lang3.StringUtils;
@@ -85,6 +86,10 @@ public class TerminalService {
           printProgress(((ProgressSignal) signal).currentProgress,
               ((ProgressSignal) signal).maxProgress);
           lastProgress = true;
+        } else if (signal instanceof WaitSignal) {
+          printWait(((WaitSignal) signal).message, ((WaitSignal) signal).currentProgress,
+              ((WaitSignal) signal).limit);
+          lastProgress = true;
         } else if (signal instanceof ErrorSignal) {
           printError(((ErrorSignal) signal).message, lastProgress);
           lastProgress = false;
@@ -95,6 +100,18 @@ public class TerminalService {
         break;
       }
     }
+  }
+
+  private static void printWait(String message, int currentProgress, int limit) {
+    String ansiCode = "[0G";
+    StringBuilder sb = new StringBuilder();
+    sb.append(ansiCode).append(message);
+    int count = currentProgress % limit;
+    for (int i = 0; i < count; i++) {
+      sb.append(".");
+    }
+    terminal.writer().print(Ansi.ansi().bg(Ansi.Color.BLACK).fg(Ansi.Color.BLUE).a(sb));
+    terminal.flush();
   }
 
   private static void printProgress(int currentProgress, int maxProgress) {
