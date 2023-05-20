@@ -47,6 +47,7 @@ public class TerminalService {
 
   public static void start() {
     String prompt = "docgpt> ";
+    printInfo(HelpHandler.welcome(), true);
     while (true) {
       String line;
       try {

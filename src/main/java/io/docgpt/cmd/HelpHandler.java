@@ -5,6 +5,8 @@ package io.docgpt.cmd;
 
 import org.jline.builtins.Completers;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,33 @@ import java.util.Map;
 public class HelpHandler extends CmdHandler {
 
   public static final String HELP = "help";
+
+  public static String welcome() {
+    StringBuilder welcome = new StringBuilder();
+    welcome.append(readResource("banner.txt"));
+    welcome.append(readResource("version.txt"));
+    welcome.append(
+        "DocGPT is a tool that uses OpenAI to generate documentation for code. You can first use the \"load\" command to load a Java project. You can use the \"help\" command to get assistance.\n");
+
+    return welcome.toString();
+  }
+
+  private static String readResource(String file) {
+    try {
+      StringBuilder banner = new StringBuilder();
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(HelpHandler.class.getClassLoader().getResourceAsStream(file)));
+      String str;
+      while ((str = reader.readLine()) != null) {
+        banner.append(str).append("\n");
+      }
+      reader.close();
+      return banner.toString();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return "";
+    }
+  }
 
   @Override
   public void parseOption(String[] args) {
