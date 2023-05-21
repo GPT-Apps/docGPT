@@ -9,13 +9,14 @@ import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
+import io.docgpt.cmd.CommandFactory;
+import io.docgpt.cmd.ConfigHandler;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.Properties;
 
 import static com.theokanning.openai.service.OpenAiService.defaultClient;
 import static com.theokanning.openai.service.OpenAiService.defaultObjectMapper;
+import static io.docgpt.cmd.ConfigHandler.OPENAI_API_KEY;
 
 /**
  * @author masaimu
@@ -31,8 +33,7 @@ import static com.theokanning.openai.service.OpenAiService.defaultObjectMapper;
 public class OpenAIService {
 
   public List<ChatCompletionChoice> invoke(String prompt) {
-    Properties properties = getLocalToken();
-    String token = properties.getProperty("token");
+    String token = getLocalToken();
     ObjectMapper mapper = defaultObjectMapper();
     OkHttpClient client = defaultClient(token, Duration.ofSeconds(120)).newBuilder().build();
     Retrofit retrofit = (new Retrofit.Builder()).baseUrl("https://openai.doc-gpt.net/")
@@ -54,24 +55,13 @@ public class OpenAIService {
     return choices;
   }
 
-  private Properties getLocalToken() {
-    Properties props = new Properties();
-    FileInputStream fis = null;
-    String usrHome = System.getProperty("user.home");
-    try {
-      fis = new FileInputStream(usrHome + "/.config/docgpt/config.properties");
-      props.load(fis);
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      if (fis != null) {
-        try {
-          fis.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
+  private String getLocalToken() {
+    String token = System.getenv(OPENAI_API_KEY);
+    if (StringUtils.isEmpty(token)) {
+      Properties props =
+          ((ConfigHandler) CommandFactory.getCmdHandler(ConfigHandler.CONFIG)).getLocalProp();
+      token = props.getProperty(OPENAI_API_KEY);
     }
-    return props;
+    return token;
   }
 }

@@ -4,6 +4,7 @@
 package io.docgpt;
 
 import io.docgpt.cmd.CommandFactory;
+import io.docgpt.cmd.ConfigHandler;
 import io.docgpt.cmd.GenHandler;
 import io.docgpt.cmd.HelpHandler;
 import io.docgpt.cmd.ListHandler;
@@ -21,6 +22,7 @@ public class Main {
       CommandFactory.registry(LoadHandler.LOAD, new LoadHandler());
       CommandFactory.registry(ListHandler.LIST, new ListHandler());
       CommandFactory.registry(GenHandler.GENERATE, new GenHandler());
+      CommandFactory.registry(ConfigHandler.CONFIG, new ConfigHandler());
       TerminalService.start();
     } catch (Exception e) {
       throw new RuntimeException(e);

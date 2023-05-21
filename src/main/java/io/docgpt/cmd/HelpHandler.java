@@ -19,9 +19,14 @@ public class HelpHandler extends CmdHandler {
 
   public static final String HELP = "help";
 
+  public static String banner() {
+    StringBuilder banner = new StringBuilder();
+    banner.append(readResource("banner.txt"));
+    return banner.toString();
+  }
+
   public static String welcome() {
     StringBuilder welcome = new StringBuilder();
-    welcome.append(readResource("banner.txt"));
     welcome.append(readResource("version.txt"));
     welcome.append(
         "DocGPT is a tool that uses OpenAI to generate documentation for code. You can first use the \"load\" command to load a Java project. You can use the \"help\" command to get assistance.\n");

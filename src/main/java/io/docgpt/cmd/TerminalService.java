@@ -48,7 +48,10 @@ public class TerminalService {
 
   public static void start() {
     String prompt = "docgpt> ";
-    printInfo(HelpHandler.welcome(), true);
+    printBanner(HelpHandler.banner(), true);
+    printInfo(HelpHandler.welcome(), false);
+    printInfo(((ConfigHandler) CommandFactory.getCmdHandler(ConfigHandler.CONFIG)).checkConfig(),
+        false);
     while (true) {
       String line;
       try {
@@ -138,8 +141,16 @@ public class TerminalService {
   }
 
   private static void printInfo(String message, boolean newline) {
+    print(message, newline, Ansi.Color.GREEN);
+  }
+
+  private static void printBanner(String message, boolean newline) {
+    print(message, newline, Ansi.Color.CYAN);
+  }
+
+  private static void print(String message, boolean newline, Ansi.Color color) {
     if (StringUtils.isNotEmpty(message)) {
-      Ansi ansi = Ansi.ansi().bg(Ansi.Color.BLACK).fg(Ansi.Color.GREEN);
+      Ansi ansi = Ansi.ansi().bg(Ansi.Color.BLACK).fg(color);
       if (newline) {
         ansi.newline();
       }
