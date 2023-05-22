@@ -50,7 +50,12 @@ public class OptionsCompleters implements Completer {
     ArgumentCompleter help =
         new ArgumentCompleter(new StringsCompleter(HelpHandler.HELP), NullCompleter.INSTANCE);
 
-    aggregateCompleter = new AggregateCompleter(load, ls, gen, help);
+    OptionCompleter configOption = new OptionCompleter(
+        Arrays.asList(new ArgumentStringsCompleter("-t=", "-v")), this::commandOptions, 1);
+    ArgumentCompleter config = new ArgumentCompleter(new StringsCompleter(ConfigHandler.CONFIG),
+        configOption, NullCompleter.INSTANCE);
+
+    aggregateCompleter = new AggregateCompleter(load, ls, gen, config, help);
   }
 
   public List<Completers.OptDesc> commandOptions(String command) {
