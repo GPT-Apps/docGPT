@@ -104,12 +104,22 @@ public class ConfigHandler extends CmdHandler {
     }
   }
 
-  private void storeProp(Properties properties) {
+  public void storeProp(Properties properties) {
+    FileOutputStream fos = null;
     try {
-      FileOutputStream fos = new FileOutputStream(path());
+      fos = new FileOutputStream(path());
       properties.store(fos, new Date().toString());
     } catch (Exception e) {
       setErrorSignal(e.getMessage());
+    } finally {
+      if (fos != null) {
+        try {
+          fos.flush();
+          fos.close();
+        } catch (IOException e) {
+          setErrorSignal(e.getMessage());
+        }
+      }
     }
   }
 

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 
 /**
@@ -82,9 +83,15 @@ public class LoadHandler extends CmdHandler {
     String stopMsg = " ";
     try {
       String directory = StringUtils.EMPTY;
-
-      if (commandLine != null && commandLine.hasOption("d")) {
-        directory = commandLine.getOptionValue("d");
+      ConfigHandler configHandler =
+          (ConfigHandler) CommandFactory.getCmdHandler(ConfigHandler.CONFIG);
+      Properties props = configHandler.getLocalProp();
+      if (commandLine != null) {
+        if (commandLine.hasOption("d")) {
+          directory = commandLine.getOptionValue("d");
+        } else {
+          directory = props.getProperty("dir", StringUtils.EMPTY);
+        }
       }
       if (directory.startsWith("~" + File.separator)) {
         directory = USER_HOME + directory.substring(1);
@@ -94,6 +101,8 @@ public class LoadHandler extends CmdHandler {
         setWarnSignal(directory + " is not directory");
         return;
       }
+      props.put("dir", directory);
+      configHandler.storeProp(props);
       CodeContext codeContext = TerminalService.load(dir);
       setInfoSignal("Begin to load project files...");
       codeContext.loadProjects(dir);
@@ -151,8 +160,13 @@ public class LoadHandler extends CmdHandler {
         CompilationUnit unit = parseResult.getResult().get();
         unit.accept(packageVisitor, null);
         String packageName = packageVisitor.packageName;
-        String packagePath = packageName.replace(".", File.separator);
-        String sourceDirectory = javaFile.getPath().split(packagePath)[0];
+        String sourceDirectory;
+        if (StringUtils.isNotBlank(packageName)) {
+          String packagePath = packageName.replace(".", File.separator);
+          sourceDirectory = javaFile.getPath().split(packagePath)[0];
+        } else {
+          sourceDirectory = javaFile.getParent();
+        }
         context.sourceDirs.add(sourceDirectory);
         setProgressSignal(size, i);
       } catch (Exception e) {
