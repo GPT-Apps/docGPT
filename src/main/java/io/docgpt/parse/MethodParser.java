@@ -3,6 +3,7 @@
  */
 package io.docgpt.parse;
 
+import com.github.javaparser.ast.AccessSpecifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -71,6 +72,15 @@ public class MethodParser {
     methodPrompt.simpleName = md.getNameAsString();
   }
 
+  public static void parseAccessSpecifier(MethodDeclaration md, MethodPrompt methodPrompt) {
+    AccessSpecifier accessSpecifier = md.getAccessSpecifier();
+    if (StringUtils.isEmpty(accessSpecifier.asString())) {
+      methodPrompt.setAccessSpecifier(AccessSpecifier.PROTECTED.asString());
+    } else {
+      methodPrompt.setAccessSpecifier(accessSpecifier.asString());
+    }
+  }
+
   public static void parseResponse(MethodDeclaration md, MethodPrompt methodPrompt) {
     Type returnType = md.getType();
     parseTypeName(returnType, 3, methodPrompt.responses, returnType.asString());
@@ -108,5 +118,4 @@ public class MethodParser {
     }
     return fullyQualifiedName;
   }
-
 }

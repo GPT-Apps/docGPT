@@ -42,14 +42,13 @@ public class OpenAIService {
     OpenAiApi api = retrofit.create(OpenAiApi.class);
     OpenAiService service = new OpenAiService(api);
 
-    ChatCompletionRequest chatCompletionRequest =
-        ChatCompletionRequest.builder().model("gpt-3.5-turbo")
-            .messages(Arrays.asList(
-                new ChatMessage("system",
-                    "You're a java coder, and you're good at writing interface documentation."),
-                new ChatMessage("user", prompt)
+    ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
+        .model("gpt-3.5-turbo")
+        .messages(Arrays.asList(new ChatMessage("system",
+            "Act as a Java programmer, proficient in reading and analyzing code, capable of writing clear and detailed interface documentation based on the code, and able to create UML diagrams."),
+            new ChatMessage("user", prompt)
 
-            )).build();
+        )).build();
     List<ChatCompletionChoice> choices =
         service.createChatCompletion(chatCompletionRequest).getChoices();
     return choices;

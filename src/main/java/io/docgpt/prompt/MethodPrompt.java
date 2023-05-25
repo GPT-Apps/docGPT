@@ -19,6 +19,7 @@ import java.util.Map;
 public class MethodPrompt {
 
   private ClassPrompt classPrompt;
+  private String accessSpecifier;
   public String declaration;
   public String simpleName;
   public List<String> annotations = new ArrayList<>();
@@ -34,11 +35,12 @@ public class MethodPrompt {
   public String getRequestFormat(Map<String, ClassPrompt> cache) {
     StringBuilder prompt = new StringBuilder();
     if (parameters.size() == 0) {
-      prompt.append("Keep only one heading in the Request section with empty content. ");
+      prompt.append(
+          "The Request section does not need to contain any content, it can be left blank.\n");
     } else {
       prompt.append(
-          "The Request section include a markdown-formatted table that lists the name, type, description, and example of each parameter field.");
-      prompt.append(getField(parameters, cache, "Request"));
+          "The Request section include a markdown-formatted table that lists the name, type, description, and example of each parameter field.\n");
+      prompt.append(getField(parameters, cache, "Request")).append("\n");
     }
     return prompt.toString();
   }
@@ -46,7 +48,8 @@ public class MethodPrompt {
   public String getResponseFormat(Map<String, ClassPrompt> cache) {
     StringBuilder prompt = new StringBuilder();
     if (responses.size() == 0) {
-      prompt.append("Keep only one heading in the Response section with empty content. ");
+      prompt.append(
+          "The Response section does not need to contain any content, it can be left blank.\n");
     } else {
       prompt.append(
           "The Response section include a markdown-formatted table that lists the name, type, description, and example of each response field.");
@@ -93,33 +96,18 @@ public class MethodPrompt {
     return prompt.toString();
   }
 
-  public String docFormat() {
+  public String docBasicPrompt() {
     StringBuilder prompt = new StringBuilder();
     prompt.append(
-        "Based on the rest interface code I gave you, write an markdown interface document with an example of calling the interface with the curl command. ");
-    prompt.append(
-        "The document consists of four parts. The Description section explains the function of the interface. The Request section shows the request body of the interface. The Response section displays the response body of the interface. The Example section demonstrates an interface call with curl.");
+        "Based on the rest interface code I gave you, write an markdown interface document. ");
     return prompt.toString();
   }
 
   public String getPromptStr(Map<String, ClassPrompt> cache) {
     StringBuilder prompt = new StringBuilder();
-    prompt.append(docFormat());
-
-    prompt.append("The method declaration is `").append(declaration).append("`. ");
-    if (!CollectionUtils.isEmpty(annotations)) {
-      prompt.append("The method has the following annotations: ");
-      for (int i = 0; i < annotations.size() - 1; i++) {
-        String annotation = annotations.get(i);
-        prompt.append(annotation).append(",");
-      }
-      prompt.append(annotations.get(annotations.size() - 1)).append(". ");
-    }
-    prompt.append("The code is as follows: ").append(code).append("\n");
-
-    prompt.append(getRequestFormat(cache));
-    prompt.append(getResponseFormat(cache));
-
+    prompt.append(docBasicPrompt());
+    prompt.append(FormatPrompt.getInterfaceFormatPrompt(cache, this));
+    prompt.append(FormatPrompt.getCodePrompt(this));
     return prompt.toString();
   }
 

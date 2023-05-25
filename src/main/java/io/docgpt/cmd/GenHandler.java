@@ -89,6 +89,7 @@ public class GenHandler extends CmdHandler {
         } else {
           String prompt = methodPrompt.getPromptStr(codeContext.cache);
           setInfoSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
+          setInfoSignal("Prompt content as follows:  " + prompt);
           AtomicBoolean wait = new AtomicBoolean(true);
           CountDownLatch invoke = new CountDownLatch(1);
           new Thread(() -> {
