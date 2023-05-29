@@ -234,6 +234,7 @@ public class LoadHandler extends CmdHandler {
         ClassParser.parseFullyQualifiedName(cid, classPrompt);
         ClassParser.parseAnnotation(cid, classPrompt);
         ClassParser.parseField(cid, classPrompt);
+        ClassParser.parseDeclaratioin(cid, classPrompt);
       } finally {
         super.visit(cid, arg);
       }
@@ -242,11 +243,9 @@ public class LoadHandler extends CmdHandler {
     @Override
     public void visit(MethodDeclaration md, Void arg) {
       try {
-        if (!isApiAnnotations(md.getAnnotations())) {
-          return;
-        }
         MethodPrompt methodPrompt = new MethodPrompt();
         methodPrompt.setClassPrompt(classPrompt);
+        MethodParser.parseAccessSpecifier(md, methodPrompt);
         MethodParser.parseDeclaration(md, methodPrompt);
         MethodParser.parseSimpleName(md, methodPrompt);
         MethodParser.parseParameter(md, methodPrompt);

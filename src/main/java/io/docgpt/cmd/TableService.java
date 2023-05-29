@@ -7,11 +7,13 @@ import io.docgpt.parse.CodeContext;
 import io.docgpt.prompt.ClassPrompt;
 import io.docgpt.prompt.MethodPrompt;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 import org.jline.terminal.Terminal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -70,23 +72,49 @@ public class TableService {
     if (classPrompt == null) {
       return msg.toString();
     }
-    List<String> header = Arrays.asList("ID", "METHOD", "DECLARATION");
+    List<String> header = Arrays.asList("ACCESS SPECIFIER", "METHOD", "DECLARATION");
     List<Integer> widthRatio = Arrays.asList(1, 3, 6);
     List<List<String>> rows = new ArrayList<>();
 
-    int index = 0;
     for (MethodPrompt methodPrompt : classPrompt.getMethodCache().values()) {
       String simpleName = methodPrompt.simpleName;
       String declaration = methodPrompt.declaration;
-      List<String> row = Arrays.asList(String.valueOf(index++), simpleName, declaration);
+      List<String> row = Arrays.asList(methodPrompt.getAccessSpecifier(), simpleName, declaration);
       rows.add(row);
     }
+    rows.sort((o1, o2) -> {
+      if (CollectionUtils.isEmpty(o1) || CollectionUtils.isEmpty(o2)) {
+        return 0;
+      } else if (o1.size() != o2.size()) {
+        return 0;
+      }
+      String specifier1 = o1.get(0);
+      String specifier2 = o2.get(0);
+
+      switch (specifier1) {
+        case "public":
+          return -1;
+        case "protected":
+          switch (specifier2) {
+            case "public":
+              return 1;
+            case "private":
+              return -1;
+            default:
+              return 0;
+          }
+        case "private":
+          return 1;
+        default:
+          return 0;
+      }
+    });
     msg.append(drawTable(header, rows, widthRatio, terminal.getWidth()));
     return msg.toString();
   }
 
   /**
-   * 1:3:6 id:method:declaration
+   * 1:3:6 specifier:method:declaration
    */
   private String drawTable(List<String> header, List<List<String>> rows, List<Integer> widthRatio,
       int size) {
