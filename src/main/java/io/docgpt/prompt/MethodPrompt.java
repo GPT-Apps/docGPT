@@ -4,7 +4,6 @@
 package io.docgpt.prompt;
 
 import lombok.Data;
-import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -108,6 +107,16 @@ public class MethodPrompt {
     prompt.append(docBasicPrompt());
     prompt.append(FormatPrompt.getInterfaceFormatPrompt(cache, this));
     prompt.append(FormatPrompt.getCodePrompt(this));
+    return prompt.toString();
+  }
+
+  public String getUmlPromptStr() {
+    StringBuilder prompt = new StringBuilder();
+    prompt.append(FormatPrompt.getUmlActivityKeyInfoPrompt());
+    prompt.append("\"\"\" \n");
+    prompt.append("public class ").append(classPrompt.getSimpleName()).append("\n");
+    prompt.append(FormatPrompt.getCode(this)).append("\"\"\" \n");
+    prompt.append(FormatPrompt.getUmlActivityFormat());
     return prompt.toString();
   }
 

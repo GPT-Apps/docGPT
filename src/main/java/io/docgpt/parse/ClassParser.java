@@ -54,4 +54,8 @@ public class ClassParser {
       }
     }
   }
+
+  public static void parseDeclaratioin(ClassOrInterfaceDeclaration cid, ClassPrompt classPrompt) {
+    // TODO: get class declaration
+  }
 }
