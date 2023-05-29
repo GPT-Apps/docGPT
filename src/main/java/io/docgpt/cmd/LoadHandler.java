@@ -7,11 +7,9 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
@@ -45,7 +43,7 @@ import java.util.Properties;
 public class LoadHandler extends CmdHandler {
   static Options options = new Options();
 
-  private static final String USER_HOME = System.getProperty("user.home");
+  protected static final String USER_HOME = System.getProperty("user.home");
 
   public static final String LOAD = "load";
 
@@ -259,18 +257,6 @@ public class LoadHandler extends CmdHandler {
       }
     }
 
-    private boolean isApiAnnotations(NodeList<AnnotationExpr> annotations) {
-      if (CollectionUtils.isEmpty(annotations)) {
-        return false;
-      }
-      for (AnnotationExpr annotationExpr : annotations) {
-        String name = annotationExpr.getName().asString();
-        if (name.contains("Mapping")) {
-          return true;
-        }
-      }
-      return false;
-    }
   }
 
   @Override

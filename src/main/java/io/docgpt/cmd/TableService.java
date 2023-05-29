@@ -7,13 +7,11 @@ import io.docgpt.parse.CodeContext;
 import io.docgpt.prompt.ClassPrompt;
 import io.docgpt.prompt.MethodPrompt;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 import org.jline.terminal.Terminal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 /**

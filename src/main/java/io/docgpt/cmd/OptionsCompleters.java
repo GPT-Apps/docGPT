@@ -43,7 +43,7 @@ public class OptionsCompleters implements Completer {
         NullCompleter.INSTANCE);
 
     OptionCompleter genOption = new OptionCompleter(
-        Arrays.asList(new ArgumentStringsCompleter("-m=")), this::commandOptions, 1);
+        Arrays.asList(new ArgumentStringsCompleter("-m=", "-u")), this::commandOptions, 1);
     ArgumentCompleter gen = new ArgumentCompleter(new StringsCompleter(GenHandler.GENERATE),
         genOption, NullCompleter.INSTANCE);
 
@@ -51,7 +51,7 @@ public class OptionsCompleters implements Completer {
         new ArgumentCompleter(new StringsCompleter(HelpHandler.HELP), NullCompleter.INSTANCE);
 
     OptionCompleter configOption = new OptionCompleter(
-        Arrays.asList(new ArgumentStringsCompleter("-t=", "-v")), this::commandOptions, 1);
+        Arrays.asList(new ArgumentStringsCompleter("-t=", "-v", "-o=")), this::commandOptions, 1);
     ArgumentCompleter config = new ArgumentCompleter(new StringsCompleter(ConfigHandler.CONFIG),
         configOption, NullCompleter.INSTANCE);
 
