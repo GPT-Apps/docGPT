@@ -48,6 +48,12 @@ public class ConfigHandler extends CmdHandler {
         new Completers.OptDesc("-v", "--view", "Display DocGPT config", NullCompleter.INSTANCE);
     optDescList.add(v);
     options.addOption(shortOpt(v.shortOption()), longOpt(v.longOption()), false, v.description());
+
+    Completers.OptDesc o = new Completers.OptDesc("-o", "--output",
+        "Specify document output directory", new Completers.FileNameCompleter());
+    expMap.put(o.shortOption(), "<Output directory>");
+    optDescList.add(o);
+    options.addOption(shortOpt(o.shortOption()), longOpt(o.longOption()), false, o.description());
   }
 
   @Override
@@ -90,6 +96,12 @@ public class ConfigHandler extends CmdHandler {
         String token = commandLine.getOptionValue("t");
         if (StringUtils.isNotBlank(token)) {
           properties.setProperty("OPENAI_API_KEY", token);
+          storeProp(properties);
+        }
+      } else if (commandLine.hasOption("o")) {
+        String output = commandLine.getOptionValue("o");
+        if (StringUtils.isNotBlank(output)) {
+          properties.setProperty("output", output);
           storeProp(properties);
         }
       } else {

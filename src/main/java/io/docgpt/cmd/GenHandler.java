@@ -17,13 +17,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.jline.builtins.Completers;
 import org.jline.reader.impl.completer.NullCompleter;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.docgpt.cmd.LoadHandler.USER_HOME;
 
 /**
  * @author masaimu
@@ -109,8 +115,13 @@ public class GenHandler extends CmdHandler {
           List<ChatCompletionChoice> choices = invokeAndWait(prompt);
           String umlPrompt = null;
           for (ChatCompletionChoice choice : choices) {
-            setInfoSignal(choice.getMessage().getContent());
-            umlPrompt = choice.getMessage().getContent();
+            String keyInfo = choice.getMessage().getContent();
+            if (StringUtils.isBlank(keyInfo)) {
+              continue;
+            }
+            setInfoSignal(keyInfo);
+            umlPrompt = keyInfo;
+            output(activeClassPrompt.getFullyQualifiedName(), method + "__info.txt", keyInfo);
           }
           if (StringUtils.isNotBlank(umlPrompt)) {
             umlPrompt = FormatPrompt.getUmlActivityPrompt(umlPrompt);
@@ -121,7 +132,8 @@ public class GenHandler extends CmdHandler {
             for (ChatCompletionChoice choice : choices) {
               setInfoSignal(choice.getMessage().getContent());
               plantUmlCode = choice.getMessage().getContent();
-              ResultContext.generateUml(plantUmlCode);
+              String clazzPath = classPath(activeClassPrompt.getFullyQualifiedName());
+              ResultContext.generateUml(clazzPath, method + "__activity", plantUmlCode);
             }
           }
         } else {
@@ -132,7 +144,12 @@ public class GenHandler extends CmdHandler {
           List<ChatCompletionChoice> choices = invokeAndWait(prompt);
 
           for (ChatCompletionChoice choice : choices) {
+            String content = choice.getMessage().getContent();
+            if (StringUtils.isBlank(content)) {
+              continue;
+            }
             setInfoSignal(choice.getMessage().getContent());
+            output(activeClassPrompt.getFullyQualifiedName(), method + "__api.md", content);
           }
         }
       }
@@ -140,6 +157,52 @@ public class GenHandler extends CmdHandler {
       setErrorSignal(e.getMessage());
     } finally {
       setStopSignal();
+    }
+  }
+
+  protected String classPath(String clazz) {
+    ConfigHandler configHandler =
+        (ConfigHandler) CommandFactory.getCmdHandler(ConfigHandler.CONFIG);
+    Properties props = configHandler.getLocalProp();
+    String home = USER_HOME;
+    String output = props.getProperty("output", home + File.separator + "docgpt");
+    if (output.startsWith("~" + File.separator)) {
+      output = USER_HOME + output.substring(1);
+    }
+    File dir = new File(output);
+    if (!dir.exists()) {
+      dir.mkdirs();
+    } else if (!dir.isDirectory()) {
+      throw new RuntimeException(output + " is not directory.");
+    }
+
+    String classPath = clazz.replace(".", "_");
+    String classAbsolutePath = output + File.separator + classPath;
+    File classDir = new File(classAbsolutePath);
+    if (!classDir.exists()) {
+      classDir.mkdir();
+    }
+    return classDir.getAbsolutePath();
+  }
+
+  private void output(String clazz, String fileName, String content) {
+    String filePath = classPath(clazz) + File.separator + fileName;
+
+    FileOutputStream fos = null;
+    try {
+      fos = new FileOutputStream(filePath);
+      fos.write(content.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      setErrorSignal(e.getMessage());
+    } finally {
+      if (fos != null) {
+        try {
+          fos.flush();
+          fos.close();
+        } catch (IOException e) {
+          setErrorSignal(e.getMessage());
+        }
+      }
     }
   }
 
