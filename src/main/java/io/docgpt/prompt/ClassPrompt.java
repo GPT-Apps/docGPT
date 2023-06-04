@@ -33,6 +33,8 @@ public class ClassPrompt {
   public String classDescription;
   public Map<String /* field name */, ClassPrompt> dependencySet = new HashMap<>();
 
+  ClassSummaryContext classSummaryContext;
+
   public MethodPrompt getMethodPrompt(String methodName) {
     List<String /* declaration */> declarations = methodNameCache.get(methodName);
     if (CollectionUtils.isEmpty(declarations)) {

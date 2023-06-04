@@ -133,7 +133,6 @@ public class GenHandler extends CmdHandler {
           return;
         }
         if (needUml) {
-          ClassSummaryContext classSummaryContext = new ClassSummaryContext();
           for (MethodPrompt methodPrompt : classPrompt.getMethodCache().values()) {
             String keyInfo = doGenerateMethodKeyInfo(methodPrompt);
             if (JsonUtil.isValidJson(keyInfo)) {
@@ -153,6 +152,9 @@ public class GenHandler extends CmdHandler {
               continue;
             }
             setInfoSignal(keyInfo);
+            ClassSummaryContext classSummaryContext =
+                JsonUtil.fromJson(keyInfo, ClassSummaryContext.class);
+            classPrompt.setClassSummaryContext(classSummaryContext);
             break;
           }
         }
