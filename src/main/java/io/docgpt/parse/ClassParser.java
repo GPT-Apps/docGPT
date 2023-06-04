@@ -3,9 +3,11 @@
  */
 package io.docgpt.parse;
 
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import io.docgpt.prompt.ClassPrompt;
 import org.apache.commons.collections.CollectionUtils;
@@ -56,6 +58,28 @@ public class ClassParser {
   }
 
   public static void parseDeclaratioin(ClassOrInterfaceDeclaration cid, ClassPrompt classPrompt) {
-    // TODO: get class declaration
+    String simpleName = cid.getNameAsString();
+
+    NodeList<ClassOrInterfaceType> nodeList = cid.getExtendedTypes();
+    for (ClassOrInterfaceType parent : nodeList) {
+      classPrompt.getParentClass().add(parent.getNameAsString());
+    }
+
+    List<ClassOrInterfaceType> interfaces = cid.getImplementedTypes();
+    for (ClassOrInterfaceType i : interfaces) {
+      classPrompt.getInterfaces().add(i.getNameAsString());
+    }
+    StringBuilder declaration = new StringBuilder("public class ");
+    declaration.append(simpleName);
+    if (!CollectionUtils.isEmpty(classPrompt.getParentClass())) {
+      declaration.append(" extends ").append(classPrompt.getParentClass().get(0));
+    }
+
+    if (!CollectionUtils.isEmpty(classPrompt.getInterfaces())) {
+      declaration.append(" implements ");
+      declaration.append(String.join(",", classPrompt.getInterfaces()));
+    }
+
+    classPrompt.setDeclaration(declaration.toString());
   }
 }

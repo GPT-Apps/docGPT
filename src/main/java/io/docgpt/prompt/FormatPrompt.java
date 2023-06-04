@@ -61,26 +61,16 @@ public class FormatPrompt {
   public static String getUmlActivityKeyInfoPrompt() {
     StringBuilder prompt = new StringBuilder();
     prompt.append(
-        "I want to generate several UML Activity Diagram based on the code below. Can you extract the key information for me to help me generate PlantUML code? The result should not include PlantUML code, we don't need it for now.\n");
+        "I want to generate several UML Activity Diagram based on the code below. Extract the key information to generate PlantUML code, the result should not include PlantUML code, we don't need it for now.\n");
     return prompt.toString();
   }
 
-  public static String getUmlActivityFormat() {
+  public static String getMethodUmlActivityFormat() {
     StringBuilder prompt = new StringBuilder();
     prompt.append(
-        "The content consists of 5 parts, the format and content of each part are shown as follows.\n") //
-        .append("## class name \n") //
-        .append("Class name. \n") //
-        .append("## method name \n").append("Method name. \n") //
-        .append("## Argument list \n") //
-        .append(
-            "The argument type and argument name list that the method receives, separated by commas, like: '''Object obj1, Map map2'''. \n")
-        .append("## Dependency list \n") //
-        .append(
-            "The dependency type list that the method uses, separated by commas, like '''Object, Map, List'''. \n") //
-        .append("## Actions \n") //
-        .append(
-            "Provide a concise summary of the main steps of method execution, without going into too much detail. \n");
+        "The content consists of 6 parts, the format is json and content of each part are shown as follows.\n") //
+        .append(MethodSummaryContext.getFormatPrompt()) //
+        .append("\n");
     return prompt.toString();
   }
 
@@ -89,6 +79,48 @@ public class FormatPrompt {
     prompt.append(
         "Generate PlantUML code for an activity diagram based on the following information: class name, method name, argument list, dependency list, and actions. \n");
     prompt.append(keyInfo).append("\n");
+    return prompt.toString();
+  }
+
+  public static String getUmlClassKeyInfoPrompt() {
+    StringBuilder prompt = new StringBuilder();
+    prompt.append(
+        "I want to generate UML Class Diagram according to the class declaration and method comments given below. Extract the key information to generate PlantUML code, the result should not include PlantUML code, we don't need it for now.\n");
+    return prompt.toString();
+  }
+
+  protected static String getClassCode(ClassPrompt classPrompt) {
+    StringBuilder prompt = new StringBuilder();
+    List<String> annotations = classPrompt.classAnnotations;
+    if (!CollectionUtils.isEmpty(annotations)) {
+      for (int i = 0; i < annotations.size(); i++) {
+        String annotation = annotations.get(i);
+        prompt.append(annotation).append("\n");
+      }
+    }
+
+    prompt.append(classPrompt.declaration).append(" {\n");
+
+    for (Map.Entry<String /* declaration */, MethodPrompt> entry : classPrompt.methodCache
+        .entrySet()) {
+      String declaration = entry.getKey();
+      MethodPrompt methodPrompt = entry.getValue();
+      prompt.append("/*\n") //
+          .append(methodPrompt.summaryContext.description) //
+          .append("\n*/\n{") //
+          .append(declaration) //
+          .append("\n}\n");
+    }
+    prompt.append("}\n");
+    return prompt.toString();
+  }
+
+  public static String getClassUmlActivityFormat() {
+    StringBuilder prompt = new StringBuilder();
+    prompt.append(
+        "The content consists of 3 parts, the format is json and content of each part are shown as follows.\n") //
+        .append(ClassSummaryContext.getFormatPrompt()) //
+        .append("\n");
     return prompt.toString();
   }
 

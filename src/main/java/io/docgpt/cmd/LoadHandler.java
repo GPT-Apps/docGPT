@@ -55,6 +55,8 @@ public class LoadHandler extends CmdHandler {
 
   private static final Map<String, String /* arg example */> expMap = new HashMap<>();
 
+  static ClassCompleter completer = new ClassCompleter();
+
   static {
     OptDesc d = new OptDesc("-d", "--directory", "Specify Java file directory path to load class",
         new FileNameCompleter());
@@ -112,7 +114,7 @@ public class LoadHandler extends CmdHandler {
       preLoad(codeContext);
       stopMsg = "The Java code parsing has been completed.";
       CommandFactory.setCodeContext(codeContext);
-      ListHandler.completer.setClazzVars(new ArrayList<>(codeContext.nameCache.keySet()));
+      completer.setClazzVars(new ArrayList<>(codeContext.nameCache.keySet()));
     } finally {
       setStopSignal(stopMsg);
     }
