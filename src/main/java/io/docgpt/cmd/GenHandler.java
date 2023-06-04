@@ -5,10 +5,13 @@ package io.docgpt.cmd;
 
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import io.docgpt.parse.CodeContext;
+import io.docgpt.parse.JsonUtil;
 import io.docgpt.parse.ResultContext;
 import io.docgpt.prompt.ClassPrompt;
+import io.docgpt.prompt.ClassSummaryContext;
 import io.docgpt.prompt.FormatPrompt;
 import io.docgpt.prompt.MethodPrompt;
+import io.docgpt.prompt.MethodSummaryContext;
 import io.docgpt.prompt.OpenAIService;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -56,11 +59,17 @@ public class GenHandler extends CmdHandler {
         "Specify method to generate document", methodCompleter);
     Completers.OptDesc u = new Completers.OptDesc("-u", "--uml", "Specify method to generate UML",
         NullCompleter.INSTANCE);
-    expMap.put(m.shortOption(), "<Simple java name>");
+    expMap.put(m.shortOption(), "<Simple method name>");
     optDescList.add(m);
     optDescList.add(u);
     options.addOption(shortOpt(m.shortOption()), longOpt(m.longOption()), true, m.description());
     options.addOption(shortOpt(u.shortOption()), longOpt(u.longOption()), false, u.description());
+
+    Completers.OptDesc c = new Completers.OptDesc("-c", "--class",
+        "Specify class to generate document", LoadHandler.completer);
+    expMap.put(c.shortOption(), "<Simple class name>");
+    optDescList.add(c);
+    options.addOption(shortOpt(c.shortOption()), longOpt(c.longOption()), true, c.description());
   }
 
   @Override
@@ -81,9 +90,10 @@ public class GenHandler extends CmdHandler {
   public void handler() {
     try {
       String method = StringUtils.EMPTY;
+      String clazz = StringUtils.EMPTY;
 
       if (commandLine == null) {
-        setWarnSignal("Please specify method first.");
+        setWarnSignal("Please specify method or class first.");
         return;
       }
 
@@ -107,67 +117,45 @@ public class GenHandler extends CmdHandler {
         if (methodPrompt == null) {
           setWarnSignal("Can not find method " + method);
         } else if (needUml) {
-          String prompt = methodPrompt.getUmlPromptStr();
+          generateMethodUml(methodPrompt, method, activeClassPrompt);
+        } else {
+          doGenerateDoc(methodPrompt, codeContext, activeClassPrompt, method);
+        }
+      } else {
+        ClassPrompt classPrompt = activeClassPrompt;
+        if (StringUtils.isNotEmpty(clazz)) {
+          List<String> fullNameList = codeContext.nameCache.get(clazz);
+          String fullName = fullNameList.get(0);
+          classPrompt = codeContext.cache.get(fullName);
+        }
+        if (classPrompt == null) {
+          setWarnSignal("Please specify effective class first.");
+          return;
+        }
+        if (needUml) {
+          for (MethodPrompt methodPrompt : classPrompt.getMethodCache().values()) {
+            String keyInfo = doGenerateMethodKeyInfo(methodPrompt);
+            if (JsonUtil.isValidJson(keyInfo)) {
+              MethodSummaryContext methodSummaryContext =
+                  JsonUtil.fromJson(keyInfo, MethodSummaryContext.class);
+              methodPrompt.summaryContext = methodSummaryContext;
+            }
+          }
+          String classUmlKeyInfoPrompt = classPrompt.getUmlPromptStr();
           setInfoSignal(
-              "Begin to invoke OpenAI API to extra uml key, prompt length is " + prompt.length());
-          setInfoSignal("Prompt content as follows:  " + prompt);
-
-          List<ChatCompletionChoice> choices = invokeAndWait(prompt);
-          String umlPrompt = null;
+              "Begin to invoke OpenAI API, prompt length is " + classUmlKeyInfoPrompt.length());
+          setInfoSignal("Prompt content as follows:  " + classUmlKeyInfoPrompt);
+          List<ChatCompletionChoice> choices = invokeAndWait(classUmlKeyInfoPrompt);
           for (ChatCompletionChoice choice : choices) {
             String keyInfo = choice.getMessage().getContent();
             if (StringUtils.isBlank(keyInfo)) {
               continue;
             }
             setInfoSignal(keyInfo);
-            umlPrompt = keyInfo;
-            String filePath =
-                output(activeClassPrompt.getFullyQualifiedName(), method + "__info.txt", keyInfo);
-            setInfoSignal("The key information has been saved as " + filePath);
-          }
-          if (StringUtils.isNotBlank(umlPrompt)) {
-            boolean success = false;
-            int repeat = 0;
-            do {
-              umlPrompt = FormatPrompt.getUmlActivityPrompt(umlPrompt);
-              setInfoSignal(
-                  "Begin to invoke OpenAI API to uml, prompt length is " + umlPrompt.length());
-              choices = invokeAndWait(umlPrompt);
-              String plantUmlCode = null;
-              for (ChatCompletionChoice choice : choices) {
-                setInfoSignal(choice.getMessage().getContent());
-                plantUmlCode = choice.getMessage().getContent();
-                String clazzPath = classPath(activeClassPrompt.getFullyQualifiedName());
-                setInfoSignal("Try to generate UML diagram.");
-                success = ResultContext.generateUml(clazzPath, method + "__activity", plantUmlCode);
-                if (!success) {
-                  setWarnSignal("The PlantUML code generated by OpenAI is SyntaxError, retry.");
-                } else {
-                  String path = clazzPath + File.separator + method + ".png";
-                  setInfoSignal("Generate UML diagram " + path);
-                }
-              }
-            } while (!success && repeat++ < 4);
-            if (!success && repeat >= 4) {
-              setWarnSignal("The maximum number of retries has been reached. End this attempt.");
-            }
-          }
-        } else {
-          String prompt = methodPrompt.getPromptStr(codeContext.cache);
-          setInfoSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
-          setInfoSignal("Prompt content as follows:  " + prompt);
-
-          List<ChatCompletionChoice> choices = invokeAndWait(prompt);
-
-          for (ChatCompletionChoice choice : choices) {
-            String content = choice.getMessage().getContent();
-            if (StringUtils.isBlank(content)) {
-              continue;
-            }
-            setInfoSignal(choice.getMessage().getContent());
-            String filePath =
-                output(activeClassPrompt.getFullyQualifiedName(), method + "__api.md", content);
-            setInfoSignal("Document has been saved as " + filePath);
+            ClassSummaryContext classSummaryContext =
+                JsonUtil.fromJson(keyInfo, ClassSummaryContext.class);
+            classPrompt.setClassSummaryContext(classSummaryContext);
+            break;
           }
         }
       }
@@ -175,6 +163,26 @@ public class GenHandler extends CmdHandler {
       setErrorSignal(e.getMessage());
     } finally {
       setStopSignal();
+    }
+  }
+
+  private void doGenerateDoc(MethodPrompt methodPrompt, CodeContext codeContext,
+      ClassPrompt activeClassPrompt, String method) throws InterruptedException {
+    String prompt = methodPrompt.getPromptStr(codeContext.cache);
+    setInfoSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
+    setInfoSignal("Prompt content as follows:  " + prompt);
+
+    List<ChatCompletionChoice> choices = invokeAndWait(prompt);
+
+    for (ChatCompletionChoice choice : choices) {
+      String content = choice.getMessage().getContent();
+      if (StringUtils.isBlank(content)) {
+        continue;
+      }
+      setInfoSignal(choice.getMessage().getContent());
+      String filePath =
+          output(activeClassPrompt.getFullyQualifiedName(), method + "__api.md", content);
+      setInfoSignal("Document has been saved as " + filePath);
     }
   }
 
@@ -223,6 +231,58 @@ public class GenHandler extends CmdHandler {
       }
     }
     return filePath;
+  }
+
+  private void generateMethodUml(MethodPrompt methodPrompt, String method,
+      ClassPrompt activeClassPrompt) throws InterruptedException, IOException {
+    String keyInfo = doGenerateMethodKeyInfo(methodPrompt);
+    String filePath =
+        output(activeClassPrompt.getFullyQualifiedName(), method + "__info.json", keyInfo);
+    setInfoSignal("The key information has been saved as " + filePath);
+    if (StringUtils.isNotBlank(keyInfo)) {
+      boolean success = false;
+      int repeat = 0;
+      do {
+        String umlPrompt = FormatPrompt.getUmlActivityPrompt(keyInfo);
+        setInfoSignal("Begin to invoke OpenAI API to uml, prompt length is " + umlPrompt.length());
+        List<ChatCompletionChoice> choices = invokeAndWait(umlPrompt);
+        String plantUmlCode = null;
+        for (ChatCompletionChoice choice : choices) {
+          setInfoSignal(choice.getMessage().getContent());
+          plantUmlCode = choice.getMessage().getContent();
+          String clazzPath = classPath(activeClassPrompt.getFullyQualifiedName());
+          setInfoSignal("Try to generate UML diagram.");
+          success = ResultContext.generateUml(clazzPath, method + "__activity", plantUmlCode);
+          if (!success) {
+            setWarnSignal("The PlantUML code generated by OpenAI is SyntaxError, retry.");
+          } else {
+            String path = clazzPath + File.separator + method + ".png";
+            setInfoSignal("Generate UML diagram " + path);
+          }
+        }
+      } while (!success && repeat++ < 4);
+      if (!success && repeat >= 4) {
+        setWarnSignal("The maximum number of retries has been reached. End this attempt.");
+      }
+    }
+  }
+
+  private String doGenerateMethodKeyInfo(MethodPrompt methodPrompt) throws InterruptedException {
+    String prompt = methodPrompt.getUmlPromptStr();
+    setInfoSignal(
+        "Begin to invoke OpenAI API to extra uml key, prompt length is " + prompt.length());
+    setInfoSignal("Prompt content as follows:  " + prompt);
+    String keyInfo = null;
+    List<ChatCompletionChoice> choices = invokeAndWait(prompt);
+    for (ChatCompletionChoice choice : choices) {
+      keyInfo = choice.getMessage().getContent();
+      if (StringUtils.isBlank(keyInfo)) {
+        continue;
+      }
+      setInfoSignal(keyInfo);
+      break;
+    }
+    return keyInfo;
   }
 
   @Override

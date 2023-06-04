@@ -27,6 +27,8 @@ public class MethodPrompt {
 
   public String comment;
 
+  public MethodSummaryContext summaryContext;
+
   public Map<String /* simpleName */, String /* fullName */> parameters = new HashMap<>();
 
   public Map<String /* simpleName */, String /* fullName */> responses = new HashMap<>();
@@ -116,7 +118,7 @@ public class MethodPrompt {
     prompt.append("\"\"\" \n");
     prompt.append("public class ").append(classPrompt.getSimpleName()).append("\n");
     prompt.append(FormatPrompt.getCode(this)).append("\"\"\" \n");
-    prompt.append(FormatPrompt.getUmlActivityFormat());
+    prompt.append(FormatPrompt.getMethodUmlActivityFormat());
     return prompt.toString();
   }
 

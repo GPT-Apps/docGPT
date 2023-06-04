@@ -28,8 +28,6 @@ public class ListHandler extends CmdHandler {
 
   static Options options = new Options();
 
-  static ClassCompleter completer = new ClassCompleter();
-
   CommandLine commandLine;
   TableService tableService = new TableService(terminal());
 
@@ -40,7 +38,8 @@ public class ListHandler extends CmdHandler {
   private static final Map<String, String /* arg example */> expMap = new HashMap<>();
 
   static {
-    OptDesc c = new OptDesc("-c", "--class", "Specify class to list methods", completer);
+    OptDesc c =
+        new OptDesc("-c", "--class", "Specify class to list methods", LoadHandler.completer);
     optDescList.add(c);
     options.addOption(shortOpt(c.shortOption()), longOpt(c.longOption()), true, c.description());
 
