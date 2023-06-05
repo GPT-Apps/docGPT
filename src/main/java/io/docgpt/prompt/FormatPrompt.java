@@ -124,4 +124,12 @@ public class FormatPrompt {
     return prompt.toString();
   }
 
+  public static String getUmlClassPrompt(String keyInfo) {
+    StringBuilder prompt = new StringBuilder();
+    prompt.append(
+        "Generate PlantUML code for an class diagram based on the following information: class name, method name, argument list, and description. \n");
+    prompt.append(keyInfo).append("\n");
+    return prompt.toString();
+  }
+
 }
