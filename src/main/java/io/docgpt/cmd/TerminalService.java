@@ -8,9 +8,11 @@ import io.docgpt.cmd.signal.ErrorSignal;
 import io.docgpt.cmd.signal.InfoSignal;
 import io.docgpt.cmd.signal.ProgressSignal;
 import io.docgpt.cmd.signal.StopSignal;
+import io.docgpt.cmd.signal.SystemSignal;
 import io.docgpt.cmd.signal.WaitSignal;
 import io.docgpt.cmd.signal.WarnSignal;
 import io.docgpt.parse.CodeContext;
+import io.docgpt.parse.ResultContext;
 import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 import org.jline.reader.EndOfFileException;
@@ -64,6 +66,8 @@ public class TerminalService {
       } catch (UserInterruptException e) {
         // Do nothing
       } catch (EndOfFileException e) {
+        System.out.println("\nBegin to flush cache...");
+        ResultContext.getInstance().flush();
         System.out.println("\nBye.");
         break;
       }
@@ -97,6 +101,9 @@ public class TerminalService {
           printError(((ErrorSignal) signal).message, lastProgress);
           lastProgress = false;
           break;
+        } else if (signal instanceof SystemSignal) {
+          printSystem(((SystemSignal) signal).message, lastProgress);
+          lastProgress = false;
         }
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -138,6 +145,10 @@ public class TerminalService {
     // terminal.getStringCapability(InfoCmp.Capability.cursor_address);
     terminal.writer().print(Ansi.ansi().bg(Ansi.Color.BLACK).fg(Ansi.Color.GREEN).a(sb));
     terminal.flush();
+  }
+
+  private static void printSystem(String message, boolean newline) {
+    print(message, newline, Ansi.Color.WHITE);
   }
 
   private static void printInfo(String message, boolean newline) {

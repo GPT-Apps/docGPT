@@ -8,7 +8,9 @@ import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author masaimu
@@ -18,7 +20,8 @@ public class ClassSummaryContext {
   public String className;
   public List<String> argumentList;
 
-  public List<MethodSummaryContext> methodSummaryContexts = new ArrayList<>();
+  public Map<String /* methodFullName */, MethodSummaryContext> methodSummaryContexts =
+      new HashMap<>();
   public String description;
   public String declaration;
 

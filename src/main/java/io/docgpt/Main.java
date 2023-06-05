@@ -10,6 +10,7 @@ import io.docgpt.cmd.HelpHandler;
 import io.docgpt.cmd.ListHandler;
 import io.docgpt.cmd.LoadHandler;
 import io.docgpt.cmd.TerminalService;
+import io.docgpt.parse.ResultContext;
 
 /**
  * @author masaimu
@@ -23,6 +24,7 @@ public class Main {
       CommandFactory.registry(ListHandler.LIST, new ListHandler());
       CommandFactory.registry(GenHandler.GENERATE, new GenHandler());
       CommandFactory.registry(ConfigHandler.CONFIG, new ConfigHandler());
+      ResultContext.getInstance().loadCache();
       TerminalService.start();
     } catch (Exception e) {
       throw new RuntimeException(e);

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jline.builtins.Completers;
 import org.jline.reader.impl.completer.NullCompleter;
 
+import javax.json.Json;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -154,7 +155,7 @@ public class GenHandler extends CmdHandler {
             setInfoSignal(keyInfo);
             ClassSummaryContext classSummaryContext =
                 JsonUtil.fromJson(keyInfo, ClassSummaryContext.class);
-            classPrompt.setClassSummaryContext(classSummaryContext);
+            ResultContext.getInstance().cacheClassKeyInfo(classPrompt, classSummaryContext);
             break;
           }
         }
@@ -169,8 +170,8 @@ public class GenHandler extends CmdHandler {
   private void doGenerateDoc(MethodPrompt methodPrompt, CodeContext codeContext,
       ClassPrompt activeClassPrompt, String method) throws InterruptedException {
     String prompt = methodPrompt.getPromptStr(codeContext.cache);
-    setInfoSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
-    setInfoSignal("Prompt content as follows:  " + prompt);
+    setSystemSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
+    setSystemSignal("Prompt content as follows:  " + prompt);
 
     List<ChatCompletionChoice> choices = invokeAndWait(prompt);
 
@@ -182,7 +183,7 @@ public class GenHandler extends CmdHandler {
       setInfoSignal(choice.getMessage().getContent());
       String filePath =
           output(activeClassPrompt.getFullyQualifiedName(), method + "__api.md", content);
-      setInfoSignal("Document has been saved as " + filePath);
+      setSystemSignal("Document has been saved as " + filePath);
     }
   }
 
@@ -191,7 +192,8 @@ public class GenHandler extends CmdHandler {
         (ConfigHandler) CommandFactory.getCmdHandler(ConfigHandler.CONFIG);
     Properties props = configHandler.getLocalProp();
     String home = USER_HOME;
-    String output = props.getProperty("output", home + File.separator + "docgpt");
+    String output =
+        props.getProperty("output", String.join(File.separator, home, "docgpt", "result"));
     if (output.startsWith("~" + File.separator)) {
       output = USER_HOME + output.substring(1);
     }
@@ -236,15 +238,16 @@ public class GenHandler extends CmdHandler {
   private void generateMethodUml(MethodPrompt methodPrompt, String method,
       ClassPrompt activeClassPrompt) throws InterruptedException, IOException {
     String keyInfo = doGenerateMethodKeyInfo(methodPrompt);
-    String filePath =
-        output(activeClassPrompt.getFullyQualifiedName(), method + "__info.json", keyInfo);
-    setInfoSignal("The key information has been saved as " + filePath);
+    // String filePath =
+    // output(activeClassPrompt.getFullyQualifiedName(), method + "__info.json", keyInfo);
+    // setInfoSignal("The key information has been saved as " + filePath);
     if (StringUtils.isNotBlank(keyInfo)) {
       boolean success = false;
       int repeat = 0;
       do {
         String umlPrompt = FormatPrompt.getUmlActivityPrompt(keyInfo);
-        setInfoSignal("Begin to invoke OpenAI API to uml, prompt length is " + umlPrompt.length());
+        setSystemSignal(
+            "Begin to invoke OpenAI API to uml, prompt length is " + umlPrompt.length());
         List<ChatCompletionChoice> choices = invokeAndWait(umlPrompt);
         String plantUmlCode = null;
         for (ChatCompletionChoice choice : choices) {
@@ -268,10 +271,22 @@ public class GenHandler extends CmdHandler {
   }
 
   private String doGenerateMethodKeyInfo(MethodPrompt methodPrompt) throws InterruptedException {
+    String classFullyQualifiedName = methodPrompt.getClassPrompt().getFullyQualifiedName();
+    ClassSummaryContext classSummaryContext =
+        ResultContext.getInstance().getClassSummaryContext(classFullyQualifiedName);
+    if (classSummaryContext != null) {
+      setSystemSignal("Try to get method key info from class context.");
+      MethodSummaryContext methodSummaryContext =
+          classSummaryContext.methodSummaryContexts.get(methodPrompt.declaration);
+      if (methodSummaryContext != null) {
+        setSystemSignal("Get method key info from class context.");
+        return JsonUtil.toJson(methodSummaryContext);
+      }
+    }
     String prompt = methodPrompt.getUmlPromptStr();
-    setInfoSignal(
+    setSystemSignal(
         "Begin to invoke OpenAI API to extra uml key, prompt length is " + prompt.length());
-    setInfoSignal("Prompt content as follows:  " + prompt);
+    setSystemSignal("Prompt content as follows:  " + prompt);
     String keyInfo = null;
     List<ChatCompletionChoice> choices = invokeAndWait(prompt);
     for (ChatCompletionChoice choice : choices) {
@@ -281,6 +296,11 @@ public class GenHandler extends CmdHandler {
       }
       setInfoSignal(keyInfo);
       break;
+    }
+    if (StringUtils.isNotBlank(keyInfo) && JsonUtil.isValidJson(keyInfo)) {
+      MethodSummaryContext methodSummaryContext =
+          JsonUtil.fromJson(keyInfo, MethodSummaryContext.class);
+      ResultContext.getInstance().cacheMethodKeyInfo(methodPrompt, methodSummaryContext);
     }
     return keyInfo;
   }

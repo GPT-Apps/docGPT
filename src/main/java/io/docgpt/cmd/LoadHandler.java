@@ -43,7 +43,7 @@ import java.util.Properties;
 public class LoadHandler extends CmdHandler {
   static Options options = new Options();
 
-  protected static final String USER_HOME = System.getProperty("user.home");
+  public static final String USER_HOME = System.getProperty("user.home");
 
   public static final String LOAD = "load";
 
