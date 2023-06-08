@@ -5,8 +5,6 @@
 
 A CLI written in Java language that generate API interface document and UML diagrams for you using ChatGPT AI(gpt-3.5-turbo).
 
-简介
-
 ## Feature
 
 - Generate API interface documentation, which displays the request and response data structures in tabular form and provides sample code for calling the API in both curl and Java.
