@@ -167,7 +167,7 @@ public class ConfigHandler extends CmdHandler {
       token = props.getProperty(OPENAI_API_KEY);
     }
     if (StringUtils.isBlank(token)) {
-      return "OpenAI api key has not been set yet, you can use 'export OPENAI_API_KEY=sk-xxxxxxx' in shell or store your API key by 'config -t=sk-xxxxxxx' in docgpt";
+      return "OpenAI api key has not been set yet, you can use 'export OPENAI_API_KEY=sk-xxxxxxx' in shell or store your API key by 'conf -t=sk-xxxxxxx' in docgpt";
     }
     return "OpenAI api key has been set";
   }
