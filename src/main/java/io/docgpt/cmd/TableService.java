@@ -7,6 +7,7 @@ import io.docgpt.parse.CodeContext;
 import io.docgpt.prompt.ClassPrompt;
 import io.docgpt.prompt.MethodPrompt;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 import org.jline.terminal.Terminal;
 
@@ -80,14 +81,19 @@ public class TableService {
       List<String> row = Arrays.asList(methodPrompt.getAccessSpecifier(), simpleName, declaration);
       rows.add(row);
     }
+
     rows.sort((o1, o2) -> {
       if (CollectionUtils.isEmpty(o1) || CollectionUtils.isEmpty(o2)) {
         return 0;
       } else if (o1.size() != o2.size()) {
-        return 0;
+        return Integer.compare(o1.size(), o2.size());
       }
       String specifier1 = o1.get(0);
       String specifier2 = o2.get(0);
+
+      if (StringUtils.equals(specifier1, specifier2)) {
+        return StringUtils.compare(o1.get(1), o2.get(1));
+      }
 
       switch (specifier1) {
         case "public":
@@ -98,8 +104,6 @@ public class TableService {
               return 1;
             case "private":
               return -1;
-            default:
-              return 0;
           }
         case "private":
           return 1;

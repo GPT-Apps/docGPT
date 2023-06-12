@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 
@@ -171,9 +172,7 @@ public class LoadHandler extends CmdHandler {
         context.sourceDirs.add(sourceDirectory);
         setProgressSignal(size, i);
       } catch (Exception e) {
-        System.err
-            .println("fail to parse " + javaFile.getAbsolutePath() + " for " + e.getMessage());
-        e.printStackTrace();
+        setErrorSignal("fail to parse " + javaFile.getAbsolutePath() + " for " + e.getMessage());
       }
     }
   }
@@ -192,24 +191,24 @@ public class LoadHandler extends CmdHandler {
         }
         CompilationUnit unit = parseResult.getResult().get();
         unit.accept(classVisitor, null);
-        ClassPrompt classPrompt = classVisitor.classPrompt;
-        if (!CollectionUtils.isEmpty(classPrompt.getClassAnnotations())) {
-          for (MethodPrompt methodPrompt : classPrompt.getMethodCache().values()) {
-            methodPrompt.addAnnotations(classPrompt.getClassAnnotations());
+        List<ClassPrompt> classPrompts = new ArrayList<>(classVisitor.classPrompts.values());
+        for (ClassPrompt classPrompt : classPrompts) {
+          if (!CollectionUtils.isEmpty(classPrompt.getClassAnnotations())) {
+            for (MethodPrompt methodPrompt : classPrompt.getMethodCache().values()) {
+              methodPrompt.addAnnotations(classPrompt.getClassAnnotations());
+            }
           }
+          if (StringUtils.isEmpty(classPrompt.getSimpleName())) {
+            continue;
+          }
+          context.cache.put(classPrompt.getFullyQualifiedName(), classPrompt);
+          List<String> fullNames = context.nameCache.computeIfAbsent(classPrompt.getSimpleName(),
+              k -> new ArrayList<>());
+          fullNames.add(classPrompt.getFullyQualifiedName());
         }
-        if (StringUtils.isEmpty(classPrompt.getSimpleName())) {
-          continue;
-        }
-        context.cache.put(classPrompt.getFullyQualifiedName(), classPrompt);
-        List<String> fullNames =
-            context.nameCache.computeIfAbsent(classPrompt.getSimpleName(), k -> new ArrayList<>());
-        fullNames.add(classPrompt.getFullyQualifiedName());
         setProgressSignal(size, i);
       } catch (Exception e) {
-        System.err
-            .println("fail to parse " + javaFile.getAbsolutePath() + " for " + e.getMessage());
-        e.printStackTrace();
+        setErrorSignal("fail to parse " + javaFile.getAbsolutePath() + " for " + e.getMessage());
       }
     }
   }
@@ -226,16 +225,18 @@ public class LoadHandler extends CmdHandler {
 
   // 自定义访问者，用于访问方法
   private static class ClassVisitor extends VoidVisitorAdapter<Void> {
-    ClassPrompt classPrompt = new ClassPrompt();
+    Map<String /* class name */, ClassPrompt> classPrompts = new HashMap<>();
 
     @Override
     public void visit(ClassOrInterfaceDeclaration cid, Void arg) {
       try {
+        ClassPrompt classPrompt = new ClassPrompt();
         ClassParser.parseSimpleName(cid, classPrompt);
         ClassParser.parseFullyQualifiedName(cid, classPrompt);
         ClassParser.parseAnnotation(cid, classPrompt);
         ClassParser.parseField(cid, classPrompt);
         ClassParser.parseDeclaratioin(cid, classPrompt);
+        classPrompts.put(classPrompt.getSimpleName(), classPrompt);
       } finally {
         super.visit(cid, arg);
       }
@@ -244,6 +245,16 @@ public class LoadHandler extends CmdHandler {
     @Override
     public void visit(MethodDeclaration md, Void arg) {
       try {
+        Optional<ClassOrInterfaceDeclaration> optional =
+            md.findAncestor(ClassOrInterfaceDeclaration.class);
+        if (!optional.isPresent()) {
+          return;
+        }
+        String className = optional.get().getNameAsString();
+        ClassPrompt classPrompt = classPrompts.get(className);
+        if (classPrompt == null) {
+          System.err.println("can not find classPrompt by " + className);
+        }
         MethodPrompt methodPrompt = new MethodPrompt();
         methodPrompt.setClassPrompt(classPrompt);
         MethodParser.parseAccessSpecifier(md, methodPrompt);
