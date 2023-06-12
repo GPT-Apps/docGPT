@@ -155,7 +155,8 @@ public class LoadHandler extends CmdHandler {
         PackageVisitor packageVisitor = new PackageVisitor();
         ParseResult<CompilationUnit> parseResult = javaParser.parse(javaFile);
         if (!parseResult.isSuccessful()) {
-          System.err.println("fail to parse " + javaFile.getName());
+          setWarnSignal("fail to parse " + javaFile.getName());
+          continue;
         }
         CompilationUnit unit = parseResult.getResult().get();
         unit.accept(packageVisitor, null);
@@ -186,8 +187,8 @@ public class LoadHandler extends CmdHandler {
 
         ParseResult<CompilationUnit> parseResult = javaParser.parse(javaFile);
         if (!parseResult.isSuccessful()) {
+          setWarnSignal("fail to parse " + javaFile.getName());
           continue;
-          // System.err.println("fail to parse " + javaFile.getName());
         }
         CompilationUnit unit = parseResult.getResult().get();
         unit.accept(classVisitor, null);

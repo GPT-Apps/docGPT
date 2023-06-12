@@ -8,6 +8,7 @@ import io.docgpt.prompt.ClassPrompt;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jline.builtins.Completers;
 import org.jline.builtins.Completers.OptDesc;
@@ -82,6 +83,10 @@ public class ListHandler extends CmdHandler {
         setInfoSignal(list);
       } else if (StringUtils.isNotBlank(clazz)) {
         List<String> fullNameList = codeContext.nameCache.get(clazz);
+        if (CollectionUtils.isEmpty(fullNameList)) {
+          setWarnSignal("Can not find any method of " + clazz);
+          return;
+        }
         String fullName = fullNameList.get(0);
         ClassPrompt classPrompt = codeContext.cache.get(fullName);
         codeContext.activeClassPrompt = classPrompt;
