@@ -11,6 +11,7 @@ import io.docgpt.cmd.signal.StopSignal;
 import io.docgpt.cmd.signal.SystemSignal;
 import io.docgpt.cmd.signal.WaitSignal;
 import io.docgpt.cmd.signal.WarnSignal;
+import io.docgpt.exception.CommandException;
 import io.docgpt.parse.CodeContext;
 import io.docgpt.parse.ResultContext;
 import org.apache.commons.lang3.StringUtils;
@@ -63,6 +64,8 @@ public class TerminalService {
           continue;
         }
         printSignal(cmdHandler);
+      } catch (CommandException commandException) {
+        printWarn(commandException.getMessage());
       } catch (UserInterruptException e) {
         // Do nothing
       } catch (EndOfFileException e) {
@@ -169,6 +172,10 @@ public class TerminalService {
       terminal.writer().print(ansi);
       terminal.flush();
     }
+  }
+
+  private static void printWarn(String message) {
+    printWarn(message, false);
   }
 
   private static void printWarn(String message, boolean newline) {

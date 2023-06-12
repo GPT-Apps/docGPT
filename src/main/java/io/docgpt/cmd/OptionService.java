@@ -3,6 +3,7 @@
  */
 package io.docgpt.cmd;
 
+import io.docgpt.exception.CommandException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -99,6 +100,9 @@ public class OptionService {
       if (cmdHandler != null) {
         cmdHandler.parseOption(args);
         CommandFactory.execute(cmdHandler);
+      } else {
+        throw new CommandException(
+            "command not found: " + cmd + ", you can find all available command by 'help'");
       }
       return cmdHandler;
     } catch (CancelTask e) {
