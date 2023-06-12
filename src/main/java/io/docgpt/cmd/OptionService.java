@@ -26,7 +26,7 @@ public class OptionService {
   // .hasArg(true)
   // .argName("failPath")
   // .required(false)
-  // .desc("文件的路径")
+  // .desc("file path")
   // .optionalArg(false)
   // .numberOfArgs(3)
   // .valueSeparator(',')

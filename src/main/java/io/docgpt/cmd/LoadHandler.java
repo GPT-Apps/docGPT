@@ -15,6 +15,7 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import io.docgpt.exception.CommandException;
 import io.docgpt.parse.ClassParser;
 import io.docgpt.parse.CodeContext;
 import io.docgpt.parse.MethodParser;
@@ -223,7 +224,6 @@ public class LoadHandler extends CmdHandler {
     }
   }
 
-  // 自定义访问者，用于访问方法
   private static class ClassVisitor extends VoidVisitorAdapter<Void> {
     Map<String /* class name */, ClassPrompt> classPrompts = new HashMap<>();
 
@@ -253,7 +253,7 @@ public class LoadHandler extends CmdHandler {
         String className = optional.get().getNameAsString();
         ClassPrompt classPrompt = classPrompts.get(className);
         if (classPrompt == null) {
-          System.err.println("can not find classPrompt by " + className);
+          throw new CommandException("can not find classPrompt by " + className);
         }
         MethodPrompt methodPrompt = new MethodPrompt();
         methodPrompt.setClassPrompt(classPrompt);
