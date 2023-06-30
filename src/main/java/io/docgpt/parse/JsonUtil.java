@@ -7,8 +7,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author masaimu
@@ -49,6 +52,15 @@ public class JsonUtil {
    */
   public static <T> T fromJson(String json, Type type) {
     return get().fromJson(json, type);
+  }
+
+  public static Map<String, Object> toMap(String json) {
+    Type t = new TypeToken<Map<String, Object>>() {}.getType();
+    Map<String, Object> whereMap = fromJson(json, t);
+    if (whereMap == null) {
+      return Collections.emptyMap();
+    }
+    return whereMap;
   }
 
   public static boolean isValidJson(String jsonString) {

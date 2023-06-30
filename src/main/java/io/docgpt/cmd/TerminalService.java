@@ -8,6 +8,7 @@ import io.docgpt.cmd.signal.ErrorSignal;
 import io.docgpt.cmd.signal.InfoSignal;
 import io.docgpt.cmd.signal.ProgressSignal;
 import io.docgpt.cmd.signal.StopSignal;
+import io.docgpt.cmd.signal.StreamInfoSignal;
 import io.docgpt.cmd.signal.SystemSignal;
 import io.docgpt.cmd.signal.WaitSignal;
 import io.docgpt.cmd.signal.WarnSignal;
@@ -89,6 +90,9 @@ public class TerminalService {
         } else if (signal instanceof InfoSignal) {
           printInfo(((InfoSignal) signal).message, lastProgress);
           lastProgress = false;
+        } else if (signal instanceof StreamInfoSignal) {
+          printStreamInfo(((StreamInfoSignal) signal).message, false);
+          lastProgress = false;
         } else if (signal instanceof WarnSignal) {
           printWarn(((WarnSignal) signal).message, lastProgress);
           lastProgress = false;
@@ -158,6 +162,10 @@ public class TerminalService {
     print(message, newline, Ansi.Color.GREEN);
   }
 
+  private static void printStreamInfo(String message, boolean newline) {
+    streamPrint(message, newline, Ansi.Color.GREEN);
+  }
+
   private static void printBanner(String message, boolean newline) {
     print(message, newline, Ansi.Color.CYAN);
   }
@@ -169,6 +177,18 @@ public class TerminalService {
         ansi.newline();
       }
       ansi.a(message).newline().reset();
+      terminal.writer().print(ansi);
+      terminal.flush();
+    }
+  }
+
+  private static void streamPrint(String message, boolean newline, Ansi.Color color) {
+    if (StringUtils.isNotEmpty(message)) {
+      Ansi ansi = Ansi.ansi().bg(Ansi.Color.BLACK).fg(color);
+      if (newline) {
+        ansi.newline();
+      }
+      ansi.a(message).reset();
       terminal.writer().print(ansi);
       terminal.flush();
     }
