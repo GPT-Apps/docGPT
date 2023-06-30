@@ -4,6 +4,7 @@
 package io.docgpt.cmd;
 
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
+import com.unfbx.chatgpt.entity.chat.ChatChoice;
 import io.docgpt.parse.CodeContext;
 import io.docgpt.parse.JsonUtil;
 import io.docgpt.parse.ResultContext;
@@ -59,11 +60,15 @@ public class GenHandler extends CmdHandler {
         "Specify method to generate document", methodCompleter);
     Completers.OptDesc u = new Completers.OptDesc("-u", "--uml", "Specify method to generate UML",
         NullCompleter.INSTANCE);
+    Completers.OptDesc s =
+        new Completers.OptDesc("-s", "--stream", "Stream mode", NullCompleter.INSTANCE);
     expMap.put(m.shortOption(), "<Simple method name>");
     optDescList.add(m);
     optDescList.add(u);
+    optDescList.add(s);
     options.addOption(shortOpt(m.shortOption()), longOpt(m.longOption()), true, m.description());
     options.addOption(shortOpt(u.shortOption()), longOpt(u.longOption()), false, u.description());
+    options.addOption(shortOpt(s.shortOption()), longOpt(s.longOption()), false, s.description());
 
     Completers.OptDesc c = new Completers.OptDesc("-c", "--class",
         "Specify class to generate document", LoadHandler.completer);
@@ -119,7 +124,8 @@ public class GenHandler extends CmdHandler {
         } else if (needUml) {
           generateMethodUml(methodPrompt, method, activeClassPrompt);
         } else {
-          doGenerateDoc(methodPrompt, codeContext, activeClassPrompt, method);
+          doGenerateDoc(methodPrompt, codeContext, activeClassPrompt, method,
+              commandLine.hasOption("s"));
         }
       } else {
         ClassPrompt classPrompt = activeClassPrompt;
@@ -144,23 +150,29 @@ public class GenHandler extends CmdHandler {
   }
 
   private void doGenerateDoc(MethodPrompt methodPrompt, CodeContext codeContext,
-      ClassPrompt activeClassPrompt, String method) throws InterruptedException {
+      ClassPrompt activeClassPrompt, String method, boolean stream) throws InterruptedException {
     String prompt = methodPrompt.getPromptStr(codeContext.cache);
     setSystemSignal("Begin to invoke OpenAI API, prompt length is " + prompt.length());
     setSystemSignal("Prompt content as follows:  " + prompt);
 
-    List<ChatCompletionChoice> choices = invokeAndWait(prompt);
 
-    for (ChatCompletionChoice choice : choices) {
-      String content = choice.getMessage().getContent();
-      if (StringUtils.isBlank(content)) {
-        continue;
+    if (stream) {
+      invokeWithStream(prompt);
+    } else {
+      List<ChatChoice> choices = invokeAndWait(prompt);
+
+      for (ChatChoice choice : choices) {
+        String content = choice.getMessage().getContent();
+        if (StringUtils.isBlank(content)) {
+          continue;
+        }
+        setInfoSignal(choice.getMessage().getContent());
+        String filePath =
+            output(activeClassPrompt.getFullyQualifiedName(), method + "__api.md", content);
+        setSystemSignal("Document has been saved as " + filePath);
       }
-      setInfoSignal(choice.getMessage().getContent());
-      String filePath =
-          output(activeClassPrompt.getFullyQualifiedName(), method + "__api.md", content);
-      setSystemSignal("Document has been saved as " + filePath);
     }
+
   }
 
   protected String classPath(String clazz) {
@@ -220,9 +232,9 @@ public class GenHandler extends CmdHandler {
         String umlPrompt = FormatPrompt.getUmlClassPrompt(keyInfo);
         setSystemSignal(
             "Begin to invoke OpenAI API to uml, prompt length is " + umlPrompt.length());
-        List<ChatCompletionChoice> choices = invokeAndWait(umlPrompt);
+        List<ChatChoice> choices = invokeAndWait(umlPrompt);
         String plantUmlCode = null;
-        for (ChatCompletionChoice choice : choices) {
+        for (ChatChoice choice : choices) {
           setInfoSignal(choice.getMessage().getContent());
           plantUmlCode = choice.getMessage().getContent();
           String clazzPath = classPath(classPrompt.getFullyQualifiedName());
@@ -251,9 +263,9 @@ public class GenHandler extends CmdHandler {
     setSystemSignal(
         "Begin to invoke OpenAI API, prompt length is " + classUmlKeyInfoPrompt.length());
     setSystemSignal("Prompt content as follows:  " + classUmlKeyInfoPrompt);
-    List<ChatCompletionChoice> choices = invokeAndWait(classUmlKeyInfoPrompt);
+    List<ChatChoice> choices = invokeAndWait(classUmlKeyInfoPrompt);
     String keyInfo = null;
-    for (ChatCompletionChoice choice : choices) {
+    for (ChatChoice choice : choices) {
       keyInfo = choice.getMessage().getContent();
       if (StringUtils.isBlank(keyInfo)) {
         continue;
@@ -280,9 +292,9 @@ public class GenHandler extends CmdHandler {
         String umlPrompt = FormatPrompt.getUmlActivityPrompt(keyInfo);
         setSystemSignal(
             "Begin to invoke OpenAI API to uml, prompt length is " + umlPrompt.length());
-        List<ChatCompletionChoice> choices = invokeAndWait(umlPrompt);
+        List<ChatChoice> choices = invokeAndWait(umlPrompt);
         String plantUmlCode = null;
-        for (ChatCompletionChoice choice : choices) {
+        for (ChatChoice choice : choices) {
           setInfoSignal(choice.getMessage().getContent());
           plantUmlCode = choice.getMessage().getContent();
           String clazzPath = classPath(activeClassPrompt.getFullyQualifiedName());
@@ -321,8 +333,8 @@ public class GenHandler extends CmdHandler {
         "Begin to invoke OpenAI API to extra uml key, prompt length is " + prompt.length());
     setSystemSignal("Prompt content as follows:  " + prompt);
     String keyInfo = null;
-    List<ChatCompletionChoice> choices = invokeAndWait(prompt);
-    for (ChatCompletionChoice choice : choices) {
+    List<ChatChoice> choices = invokeAndWait(prompt);
+    for (ChatChoice choice : choices) {
       keyInfo = choice.getMessage().getContent();
       if (StringUtils.isBlank(keyInfo)) {
         continue;
@@ -354,13 +366,37 @@ public class GenHandler extends CmdHandler {
     return optDescList;
   }
 
-  private List<ChatCompletionChoice> invokeAndWait(String prompt) throws InterruptedException {
+  private List<ChatChoice> invokeAndWait(String prompt) throws InterruptedException {
     CountDownLatch invoke = new CountDownLatch(1);
     AtomicBoolean wait = await(invoke);
-    List<ChatCompletionChoice> choices = openAIService.invoke(prompt);
+    List<ChatChoice> choices = openAIService.invoke(prompt);
     wait.set(false);
     invoke.await();
     return choices;
+  }
+
+  private void invokeWithStream(String prompt) throws InterruptedException {
+    CountDownLatch invoke = new CountDownLatch(1);
+    AtomicBoolean wait = streamAwait(invoke);
+    this.openAIService.streamInvoke(this, prompt, wait);
+    invoke.await();
+  }
+
+  private AtomicBoolean streamAwait(CountDownLatch invoke) {
+    AtomicBoolean wait = new AtomicBoolean(true);
+    new Thread(() -> {
+      while (wait.get()) {
+        try {
+          Thread.sleep(100L);
+        } catch (Exception e) {
+          break;
+        }
+      }
+      if (invoke != null) {
+        invoke.countDown();
+      }
+    }).start();
+    return wait;
   }
 
   private AtomicBoolean await(CountDownLatch invoke) {

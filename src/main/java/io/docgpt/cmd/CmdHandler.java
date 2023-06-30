@@ -8,6 +8,7 @@ import io.docgpt.cmd.signal.ErrorSignal;
 import io.docgpt.cmd.signal.InfoSignal;
 import io.docgpt.cmd.signal.ProgressSignal;
 import io.docgpt.cmd.signal.StopSignal;
+import io.docgpt.cmd.signal.StreamInfoSignal;
 import io.docgpt.cmd.signal.SystemSignal;
 import io.docgpt.cmd.signal.WaitSignal;
 import io.docgpt.cmd.signal.WarnSignal;
@@ -51,6 +52,10 @@ public abstract class CmdHandler implements Runnable {
 
   public boolean setInfoSignal(String infoSignal) {
     return queue.offer(new InfoSignal(infoSignal));
+  }
+
+  public boolean setStreamInfoSignal(String infoSignal) {
+    return queue.offer(new StreamInfoSignal(infoSignal));
   }
 
   public boolean setSystemSignal(String infoSignal) {

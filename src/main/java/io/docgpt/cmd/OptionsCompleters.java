@@ -42,8 +42,9 @@ public class OptionsCompleters implements Completer {
     ArgumentCompleter ls = new ArgumentCompleter(new StringsCompleter(ListHandler.LIST), lsOption,
         NullCompleter.INSTANCE);
 
-    OptionCompleter genOption = new OptionCompleter(
-        Arrays.asList(new ArgumentStringsCompleter("-c=", "-m=", "-u")), this::commandOptions, 1);
+    OptionCompleter genOption =
+        new OptionCompleter(Arrays.asList(new ArgumentStringsCompleter("-c=", "-m=", "-u", "-s")),
+            this::commandOptions, 1);
     ArgumentCompleter gen = new ArgumentCompleter(new StringsCompleter(GenHandler.GENERATE),
         genOption, NullCompleter.INSTANCE);
 
